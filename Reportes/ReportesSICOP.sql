@@ -33,21 +33,17 @@ GO;
 						*	Cantidad de procedimientos adjudicados. 
 						*	Monto total adjudicado.
 */
-
-
 CREATE PROCEDURE REP_InstitucionesSICOP
 	AS
 		BEGIN
 			SELECT	instituciones.nombreInstitucion as 'Nombre Institución'
 					, instituciones.fechaIngreso as 'Fecha de Ingreso'
 					, count(procedimientos.idProcedimiento) as 'Total de Procedimientos'
-					,COALESCE(
-						SUM(
-							CASE 
-								WHEN procedimientos.estadoProcedimiento like'Adjudicado' 
-									THEN 1 
-									ELSE 0 
-								END),0) as 'Procedimientos adjudicados'
+					,SUM(CASE 
+							WHEN procedimientos.estadoProcedimiento like'Adjudicado'
+								THEN 1 
+								ELSE 0 
+									END) as 'Procedimientos adjudicados'
 			FROM 
 				[dbo].[hechCarteles] carteles
 				INNER JOIN[dbo].[dimInstituciones] instituciones
@@ -57,6 +53,69 @@ CREATE PROCEDURE REP_InstitucionesSICOP
 			GROUP BY instituciones.nombreInstitucion, instituciones.fechaIngreso 
 		END;
 GO;
+
+/*REQ-35 SANCIONES A PROVEEDORES
+  DESCRIPCION:  Reporte que muestra las sanciones aplicadas a proveedores. 
+				A saber, los tipos de Sanción son Apercibimiento e Inhabilitación. 
+				La información que se desea ver:
+					•	Cedula Jurídica del Proveedor
+					•	Nombre del Proveedor
+					•	Tipo de Sanción
+					•	Descripción de la Sanción
+					•	Vigencia de la Sanción
+					•	Fecha final de Sanción
+*/
+CREATE PROCEDURE REP_SancionesProveedores
+	AS
+		BEGIN
+			SELECT
+					proveedores.cedulaProveedor
+					,proveedores.nombreProveedor
+					,sanciones.tipoSancion
+					, sanciones.descripcionSancion
+					, tiempoIS.fecha
+					, tiempoFS.fecha
+			FROM	[dbo].[hechSanciones] sanciones
+					INNER JOIN [dbo].[dimProveedores] proveedores
+						ON sanciones.proveedor= proveedores.idProveedor
+					INNER JOIN [dbo].[dimTiempo] tiempoIS
+						ON sanciones.fechaInicioSancion = tiempoIS.idTiempo
+					INNER JOIN [dbo].[dimTiempo] tiempoFS
+						ON sanciones.fechaFinalSancion = tiempoFS.idTiempo
+			END;
+GO;
+
+
+/*REQ-38 FUNCIONARIO INHIBIDOS
+  DESCRIPCION:Reporte que presenta los funcionarios inhibidos.
+				La información que se desea ver:
+				•	Cedula del funcionario
+				•	Nombre del funcionario
+				•	Institución donde labora
+				•	Fecha de inicio de Inhibido
+				•	Fecha de fin de Inhibido
+*/
+CREATE PROCEDURE REP_FuncionariosInhibidos
+	AS
+		BEGIN
+			SELECT funcionarios.cedulaFuncionario as 'Cédula del Funcionario'
+				   ,funcionarios.nombreFuncionario as 'Nombre del Funcionario'
+				   ,instituciones.nombreInstitucion as 'Institucioón donde Labora'
+				   ,tiempoFI.fecha as 'Fecha de Inicio de Inhibido'
+				   ,tiempoFS.fecha as 'Fecha de Fin de Inhibido'
+			FROM
+				[dbo].[hechInhibicionesFuncionario] inhibiciones
+				INNER JOIN [dbo].[dimFuncionarios] funcionarios
+				ON inhibiciones.funcionario = funcionarios.idFuncionario
+				INNER JOIN [dbo].[dimInstituciones] instituciones
+				ON inhibiciones.institucion = instituciones.idInstitucion
+				INNER JOIN [dbo].[dimTiempo] tiempoFI
+				ON inhibiciones.fechaInicioInhibicion = tiempoFI.idTiempo
+				INNER JOIN [dbo].[dimTiempo] tiempoFS
+				ON inhibiciones.fechaFinalInhibicion = tiempoFS.idTiempo
+END;
+GO;
+
 /*REQ-39 INFORMACIÓN RELEVANTE CARTEL
   DESCRIPCIÓN: Este reporte presenta información relevante del cartel.
 			   La información que se desea ver:
@@ -72,6 +131,7 @@ GO;
 				*	Código de la excepción.
 				*	Descrip. Excepción de la Contratación.Ver Anexo Listado de  Excepciones.
 */
+
 CREATE PROCEDURE REP_DetallesCartel
 	AS
 		BEGIN
@@ -98,5 +158,6 @@ CREATE PROCEDURE REP_DetallesCartel
 					ON carteles.clasificacionProducto = clasificacion.idClasificacionProducto
 			END;
 GO;
-/**/
+
+SELECT* FROM[dbo].[hechObjeciones]
 
