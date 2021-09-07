@@ -1,4 +1,3 @@
-
 /* REQ-28 TIPO DE PROCEDIMIENTOS SICOP
    DESCRIPCION: Generar un reporte que detalle los distintos tipos de figuras 
 				contractuales que se realizan en SICOP. Entiéndase por tipo de procedimiento: 
@@ -12,7 +11,6 @@
 						*	CE: Contratación Especial.
 						*	RE: Remate.
 */
-
 CREATE PROCEDURE REP_Procedimientos
 	AS
 		BEGIN
@@ -71,12 +69,12 @@ CREATE PROCEDURE REP_SancionesProveedores
 	AS
 		BEGIN
 			SELECT
-					proveedores.cedulaProveedor as 'Cédula Proveedor'
-					,proveedores.nombreProveedor as 'Nombre Proveedor'
-					,sanciones.tipoSancion as 'Tipo de Sanción'
-					, sanciones.descripcionSancion 'Descripción'
-					, tiempoIS.fecha as 'Fecha Inicio de Sanción'
-					, tiempoFS.fecha as 'Fecha Final de Sanción'
+					proveedores.cedulaProveedor
+					,proveedores.nombreProveedor
+					,sanciones.tipoSancion
+					, sanciones.descripcionSancion
+					, tiempoIS.fecha
+					, tiempoFS.fecha
 			FROM	[dbo].[hechSanciones] sanciones
 					INNER JOIN [dbo].[dimProveedores] proveedores
 						ON sanciones.proveedor= proveedores.idProveedor
@@ -161,5 +159,37 @@ CREATE PROCEDURE REP_DetallesCartel
 			END;
 GO;
 
-
+/*REQ-63 EMPRESAS CON MÁS OBJECIONES
+  DESCRIPCIÓN: Este reporte presenta las empresas con más objeciones y que obstruyen los procesos de compra
+			   La información que se desea ver:
+				*	Nombre del Proveedor
+				*	Cedula del proveedor
+				*	Objeción presentada
+				*	Numero de procedimiento
+				*	Descripción del procedimiento
+				*	Cantidad  de objeciones presentadas por empresa (proveedor)
+				*	Nombre de institución a la que le presentaron la objeción
+				*	Cédula de institución a la que le presentaron la objeción
+				*	Cantidad de objeciones presentadas por Institución
+*/
+CREATE PROCEDURE REP_EmpresasMasObjeciones
+AS
+BEGIN
+	SELECT
+		proveedores.nombreProveedor AS "Nombre del proveedor"
+		,proveedores.cedulaProveedor AS "Cédula del proveedor"
+		,CONCAT(objeciones.tipoRecurso, ' a la linea ',objeciones.lineaObjetada) AS "Objeción presentada"
+		,procedimientos.numeroProcedimiento AS "Número de procedimiento"
+		,procedimientos.descripcionProcedimiento AS "Descripción del procedimiento"
+		,instituciones.nombreInstitucion AS "Nombre de la institución"
+		,instituciones.cedulaInstitucion AS "Cédula de la institución"
+	FROM [dbo].[hechObjeciones] objeciones 
+		INNER JOIN [dbo].[dimProcedimientos] procedimientos
+			ON objeciones.procedimiento = procedimientos.idProcedimiento
+		INNER JOIN [dbo].[dimInstituciones] instituciones
+			ON procedimientos.institucion = instituciones.idInstitucion
+		INNER JOIN [dbo].[dimProveedores] proveedores
+			ON objeciones.proveedor = proveedores.idProveedor
+END
+GO
 
