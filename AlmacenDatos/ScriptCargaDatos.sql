@@ -7,7 +7,7 @@ CREATE PROCEDURE InsertarFecha
 AS
 	INSERT INTO dimTiempo (fecha,dia,mes,ano,trimestre,semestre,semana,diaAno,diaSemana)
 	VALUES (
-		@currentDate
+		@CurrentDate
 		, DATEPART(day , @CurrentDate)
 		, DATEPART(month , @CurrentDate)
 		, DATEPART(year , @CurrentDate)
@@ -87,12 +87,10 @@ SELECT
 	SUBSTRING(T0.codigo, 1, 8)
 	,SUBSTRING(T0.codigo, 9, 8)	
 	, T0.descripcion
-	,
 FROM(
 	SELECT 
 		CODIGO_IDENTIFICACION AS codigo		
-		,DESC_LINEA AS descripcion
-		,COUNT(*) AS column4
+		,DESC_LINEA AS descripcion		
 	FROM OCPE.ocpe_synapse_dw_copy.SIC.DetalleLineaCartel
 	GROUP BY CODIGO_IDENTIFICACION, DESC_LINEA
 ) AS T0
@@ -116,7 +114,7 @@ FROM OCPE.ocpe_synapse_dw_copy.CGR.Moneda
 
 INSERT INTO dimProcedimientos(numeroProcedimiento, tipoProcedimiento, modalidadProcedimiento,
 	descripcionProcedimiento, descripcionExcepcion, codigoExcepcion, estadoProcedimiento,
-	codigoBPIP, clasificacion)
+	codigoBPIP, clasificacion, nroSICOP, institucion)
 SELECT
 	NRO_PROCEDIMIENTO
 	,TIPO_PROCEDIMIENTO
@@ -127,7 +125,10 @@ SELECT
 	,CARTEL_STAT
 	,COALESCE(CODIGO_BPIP, 'N/A')
 	,CLAS_OBJ
-FROM OCPE.ocpe_synapse_dw_copy.SIC.DetalleCarteles
+	,NRO_SICOP
+	,DI.idInstitucion
+FROM OCPE.ocpe_synapse_dw_copy.SIC.DetalleCarteles DC
+	INNER JOIN dimInstituciones DI ON DC.CEDULA_INSTITUCION = DI.cedulaInstitucion
 
 INSERT INTO dimRepresentantes(cedulaRepresentante, nombreRepresentante)
 SELECT
@@ -136,8 +137,7 @@ SELECT
 FROM (
 	SELECT 
 		COALESCE(CEDULA_REPRESENTANTE, 'N/A') AS cedula
-		,COALESCE(REPRESENTANTE, 'N/A') AS nombre
-		,COUNT(*) AS column3
+		,COALESCE(REPRESENTANTE, 'N/A') AS nombre		
 	FROM OCPE.ocpe_synapse_dw_copy.SIC.ProcedimientoAdjudicacion
 	GROUP BY CEDULA_REPRESENTANTE, REPRESENTANTE	
 ) AS T0
@@ -149,20 +149,18 @@ SELECT
 FROM (
 	SELECT 
 		COALESCE(CED_FUNCIONARIO, 'N/A') AS cedula
-		,COALESCE(NOM_FUNCIONARIO, 'N/A') AS nombre
-		,COUNT(*) AS column3
+		,COALESCE(NOM_FUNCIONARIO, 'N/A') AS nombre		
 	FROM OCPE.ocpe_synapse_dw_copy.SIC.FuncionariosInhibicion
 	GROUP BY CED_FUNCIONARIO, NOM_FUNCIONARIO	
 ) AS T0
 
 -- consultas para cargar hechos --
 
-INSERT INTO hechCarteles(institucion, fechaPublicacion, procedimiento, fechaApertura,
+INSERT INTO hechCarteles(fechaPublicacion, procedimiento, fechaApertura,
 	numeroLinea, numeroPartida, cantidadSolicitada, precioUnitarioEstimado, moneda,
 	montoReservado, clasificacionProducto, tipoCambioCRC, tipoCambioUSD)
-SELECT
-	DI.idInstitucion
-	,DT1.idTiempo
+SELECT	
+	DT1.idTiempo
 	,DP.idProcedimiento
 	,DT2.idTiempo
 	,LC.NUMERO_LINEA
@@ -176,7 +174,6 @@ SELECT
 	,CAST(LC.TIPO_CAMBIO_DOLAR AS MONEY)
 FROM OCPE.ocpe_synapse_dw_copy.SIC.DetalleCarteles DC
 	INNER JOIN OCPE.ocpe_synapse_dw_copy.SIC.DetalleLineaCartel LC ON DC.NRO_SICOP = LC.NRO_SICOP
-	INNER JOIN dimInstituciones DI ON DC.CEDULA_INSTITUCION = DI.cedulaInstitucion
 	INNER JOIN dimTiempo DT1 ON CAST(DC.FECHA_PUBLICACION AS DATE) = DT1.fecha
 	INNER JOIN dimProcedimientos DP ON DC.NRO_PROCEDIMIENTO = DP.numeroProcedimiento
 	INNER JOIN dimTiempo DT2 ON CAST(DC.FECHAH_APERTURA AS DATE) = DT2.fecha
@@ -184,48 +181,48 @@ FROM OCPE.ocpe_synapse_dw_copy.SIC.DetalleCarteles DC
 	INNER JOIN dimClasificacionProductos CP ON LC.CODIGO_IDENTIFICACION = CONCAT(CP.codigoClasificacion,CP.codigoIdentificacion)
 
 INSERT INTO hechInvitaciones(institucion, procedimiento, proveedor, fechaInvitacion, secuencia)
-SELECT count(*)
-	--,DI.idInstitucion
-	--,DP.idProcedimiento
-	--,PV.idProveedor
-	--,DT.idTiempo
-	--,SECUENCIA
+SELECT
+	,DI.idInstitucion
+	,DP.idProcedimiento
+	,PV.idProveedor
+	,DT.idTiempo
+	,SECUENCIA
 FROM OCPE.ocpe_synapse_dw_copy.SIC.InvitacionProcedimiento IP
 	INNER JOIN dimInstituciones DI ON ISNULL(IP.CED_INSTITUCION,'N/A') = DI.cedulaInstitucion
 	INNER JOIN dimProcedimientos DP ON IP.NUMERO_PROCEDIMIENTO = DP.numeroProcedimiento
 	INNER JOIN dimProveedores PV ON ISNULL(IP.CEDULA_PROVEEDOR,'N/A') = PV.cedulaProveedor
 	INNER JOIN dimTiempo DT ON ISNULL(CAST(IP.FECHA_INVITACION AS DATE), '0001-01-01') = DT.fecha
 
-INSERT INTO hechOfertas (proveedor, fechaPresentacion, procedimiento, tipoOferta, producto,
-	moneda, numeroLinea, numeroOferta, cantidadOfertada, precioUnitarioOfertado, descuento,
-	IVAUnidad, acarreos, IVAAcarreos, otrosImpuestos, tipoCambioCRC, tipoCambioUSD, montoTotal)
-SELECT top 100
-	--PV.idProveedor
-	--,DT.idTiempo
-	--,DP.idProcedimiento
-	O.TIPO_OFERTA
-	,PR.idProducto
-	--,DM.idMoneda
-	,CAST(NRO_LINEA AS SMALLINT)
-	,O.NRO_OFERTA
-	,LO.CANTIDAD_OFERTADA
-	,LO.PRECIO_UNITARIO_OFERTADO
-	,LO.DESCUENTO
-	,LO.IVA
-	,LO.ACARREOS
-	,LO.OTROS_IMPUESTOS
-	,CAST(LO.TIPO_CAMBIO_CRC AS MONEY)
-	,CAST(LO.TIPO_CAMBIO_DOLAR AS MONEY)
-	,0	
-FROM OCPE.ocpe_synapse_dw_copy.SIC.Ofertas O
-	INNER JOIN OCPE.ocpe_synapse_dw_copy.SIC.LineasOfertadas LO ON O.NRO_OFERTA = LO.NRO_OFERTA
-	--INNER JOIN dimProcedimientos DP ON O.NRO_SICOP = DP.nroSICOP
-	--INNER JOIN dimProveedores PV ON O.CEDULA_PROVEEDOR = PV.cedulaProveedor
-	--INNER JOIN dimTiempo DT ON CAST(O.FECHA_PRESENTA_OFERTA AS DATE) = DT.fecha
-	INNER JOIN dimClasificacionProductos CP ON LO.CODIGO_PRODUCTO_CL = CONCAT(CP.codigoClasificacion,CP.codigoIdentificacion)
-	INNER JOIN dimProductos PR ON LO.CODIGO_PRODUCTO = CONCAT(CP.codigoClasificacion,CP.codigoIdentificacion,PR.codigoProducto)		
-	--INNER JOIN dimMonedas DM ON LO.TIPO_MONEDA = DM.codigoISO
-where nro_oferta = 'D2012030116343611811330641276741A'
+--INSERT INTO hechOfertas (proveedor, fechaPresentacion, procedimiento, tipoOferta, producto,
+--	moneda, numeroLinea, numeroOferta, cantidadOfertada, precioUnitarioOfertado, descuento,
+--	IVAUnidad, acarreos, IVAAcarreos, otrosImpuestos, tipoCambioCRC, tipoCambioUSD, montoTotal)
+--SELECT top 100
+--	--PV.idProveedor
+--	--,DT.idTiempo
+--	--,DP.idProcedimiento
+--	O.TIPO_OFERTA
+--	,PR.idProducto
+--	--,DM.idMoneda
+--	,CAST(NRO_LINEA AS SMALLINT)
+--	,O.NRO_OFERTA
+--	,LO.CANTIDAD_OFERTADA
+--	,LO.PRECIO_UNITARIO_OFERTADO
+--	,LO.DESCUENTO
+--	,LO.IVA
+--	,LO.ACARREOS
+--	,LO.OTROS_IMPUESTOS
+--	,CAST(LO.TIPO_CAMBIO_CRC AS MONEY)
+--	,CAST(LO.TIPO_CAMBIO_DOLAR AS MONEY)
+--	,0	
+--FROM OCPE.ocpe_synapse_dw_copy.SIC.Ofertas O
+--	INNER JOIN OCPE.ocpe_synapse_dw_copy.SIC.LineasOfertadas LO ON O.NRO_OFERTA = LO.NRO_OFERTA
+--	--INNER JOIN dimProcedimientos DP ON O.NRO_SICOP = DP.nroSICOP
+--	--INNER JOIN dimProveedores PV ON O.CEDULA_PROVEEDOR = PV.cedulaProveedor
+--	--INNER JOIN dimTiempo DT ON CAST(O.FECHA_PRESENTA_OFERTA AS DATE) = DT.fecha
+--	INNER JOIN dimClasificacionProductos CP ON LO.CODIGO_PRODUCTO_CL = CONCAT(CP.codigoClasificacion,CP.codigoIdentificacion)
+--	INNER JOIN dimProductos PR ON LO.CODIGO_PRODUCTO = CONCAT(CP.codigoClasificacion,CP.codigoIdentificacion,PR.codigoProducto)		
+--	--INNER JOIN dimMonedas DM ON LO.TIPO_MONEDA = DM.codigoISO
+--where nro_oferta = 'D2012030116343611811330641276741A'
 
 INSERT hechCriteriosEvaluacion(procedimiento, fechaRegistro, factorEvaluar, porcentajeEvaluacion)
 SELECT
@@ -235,14 +232,13 @@ SELECT
 	,T0.porcentaje
 FROM (
 	SELECT 
-		NRO_SICOP AS nroSICOP
-		,EVAL_ITEM_SEQNO AS column2
+		NRO_SICOP AS nroSICOP		
 		,FACTOR_EVAL AS factor
 		,PORC_EVAL AS porcentaje
-		,fecha_registro AS fechaRegistro
-		,COUNT(*) AS column6
+		,fecha_registro AS fechaRegistro		
+		,EVAL_ITEM_SEQNO AS columna5
 	FROM OCPE.ocpe_synapse_dw_copy.SIC.SistemaEvaluacionOfertas
-	GROUP BY NRO_SICOP, EVAL_ITEM_SEQNO, FACTOR_EVAL, PORC_EVAL, fecha_registro
+	GROUP BY NRO_SICOP, FACTOR_EVAL, PORC_EVAL, fecha_registro, EVAL_ITEM_SEQNO
 ) AS T0
 	INNER JOIN dimProcedimientos DP ON T0.nroSICOP = DP.nroSICOP
 	INNER JOIN dimTiempo DT ON T0.fechaRegistro =  DT.fecha
