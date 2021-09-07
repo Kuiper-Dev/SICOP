@@ -1,3 +1,4 @@
+
 /* REQ-28 TIPO DE PROCEDIMIENTOS SICOP
    DESCRIPCION: Generar un reporte que detalle los distintos tipos de figuras 
 				contractuales que se realizan en SICOP. Entiéndase por tipo de procedimiento: 
@@ -11,6 +12,7 @@
 						*	CE: Contratación Especial.
 						*	RE: Remate.
 */
+
 CREATE PROCEDURE REP_Procedimientos
 	AS
 		BEGIN
@@ -69,12 +71,12 @@ CREATE PROCEDURE REP_SancionesProveedores
 	AS
 		BEGIN
 			SELECT
-					proveedores.cedulaProveedor
-					,proveedores.nombreProveedor
-					,sanciones.tipoSancion
-					, sanciones.descripcionSancion
-					, tiempoIS.fecha
-					, tiempoFS.fecha
+					proveedores.cedulaProveedor as 'Cédula Proveedor'
+					,proveedores.nombreProveedor as 'Nombre Proveedor'
+					,sanciones.tipoSancion as 'Tipo de Sanción'
+					, sanciones.descripcionSancion 'Descripción'
+					, tiempoIS.fecha as 'Fecha Inicio de Sanción'
+					, tiempoFS.fecha as 'Fecha Final de Sanción'
 			FROM	[dbo].[hechSanciones] sanciones
 					INNER JOIN [dbo].[dimProveedores] proveedores
 						ON sanciones.proveedor= proveedores.idProveedor
@@ -159,5 +161,5 @@ CREATE PROCEDURE REP_DetallesCartel
 			END;
 GO;
 
-SELECT* FROM[dbo].[hechObjeciones]
+
 
