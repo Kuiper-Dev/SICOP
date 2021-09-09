@@ -1,3 +1,4 @@
+
 /* REQ-28 TIPO DE PROCEDIMIENTOS SICOP
    DESCRIPCION: Generar un reporte que detalle los distintos tipos de figuras 
 				contractuales que se realizan en SICOP. Entiéndase por tipo de procedimiento: 
@@ -14,11 +15,56 @@
 CREATE PROCEDURE REP_Procedimientos
 	AS
 		BEGIN
-			SELECT	procedimiento.tipoProcedimiento as Procedimiento
+			SELECT 	procedimiento.tipoProcedimiento as Procedimiento
 					, count(procedimiento.idProcedimiento) as Cantidad  
 			FROM [dbo].[dimProcedimientos] procedimiento 
 			WHERE procedimiento.estadoProcedimiento = 'Adjudicación en firme' 
-			GROUP BY procedimiento.tipoProcedimiento
+			GROUP BY procedimiento.tipoProcedimiento 
+		END;
+GO;
+
+/*REQ-31 Invitados y Ofertas por proceso MODIFICAR
+  DESCRIPCIÓN:Reporte donde muestra los proveedores que han sido invitados 
+              a cada licitación (proceso) realizada.
+				•	Número de procedimiento.
+				•	Nombre del proveedor.
+				•	Cedula del proveedor.
+				•	Participo, SI   NO  .
+				•	Fecha que se publica el cartel.
+				•	Fecha y hora de la apertura.
+				•	¿Ofertó?,  SI   NO  .
+				•	Código de producto.
+				•	Cantidad de unidades.
+*/
+
+CREATE PROCEDURE REP_InvitadosYOfertas
+	AS
+		BEGIN
+			SELECT TOP 50
+				procedimientos.numeroProcedimiento as 'Numero de Procedimiento'
+				, proveedores.nombreProveedor as 'Nombre Proveedor'
+				, proveedores.cedulaProveedor as 'Cedula Proveedor'
+				, tiempo.fecha as 'Fecha Publicacion Cartel'
+				, tiempoApertura.fecha as 'Fecha Apertura'
+				, productos.codigoProducto as 'Código de Producto'
+
+
+			FROM
+				[dbo].[hechInvitaciones] invitaciones
+				INNER JOIN [dbo].[dimProcedimientos] procedimientos
+					ON invitaciones.procedimiento = procedimientos.idProcedimiento
+				INNER JOIN [dbo].[dimProveedores] proveedores
+					ON invitaciones.proveedor =proveedores.idProveedor
+				INNER JOIN [dbo].[hechCarteles] carteles
+					ON invitaciones.procedimiento = carteles.procedimiento
+				INNER JOIN [dbo].[dimTiempo] tiempo
+					ON carteles.fechaPublicacion = tiempo.idTiempo
+				INNER JOIN [dbo].[dimTiempo] tiempoApertura
+					ON carteles.fechaApertura = tiempoApertura.idTiempo
+				INNER JOIN [dbo].[dimProductos] productos
+					ON carteles.clasificacionProducto = productos.clasificacionProducto
+
+
 		END;
 GO;
 /*REQ-34 INSTITUCIONES QUE UTILIZAN SICOP
@@ -65,6 +111,7 @@ GO;
 					•	Vigencia de la Sanción
 					•	Fecha final de Sanción
 */
+select* from[dbo].[hechCarteles]
 CREATE PROCEDURE REP_SancionesProveedores
 	AS
 		BEGIN
@@ -159,6 +206,35 @@ CREATE PROCEDURE REP_DetallesCartel
 			END;
 GO;
 
+/*REQ-42
+  DESCRIPCIÓN: Presenta en detalle variables de los Proveedores adjudicados.
+			   La información que se desea ver:
+					•	Nombre de proveedor
+					•	Cédula proveedor.
+					•	Tipo de moneda
+					•	Monto adjudicado 
+					•	Nombre de la Institución
+*/
+CREATE PROCEDURE REP_ProveedoresAdjudicados
+	AS
+		BEGIN
+			SELECT
+					proveedores.nombreProveedor as 'Nombre del Proveedor'
+					, proveedores.cedulaProveedor as 'Cedula del Proveedor'
+					,monedas.descripcionMoneda as 'Moneda'
+					,adjudicaciones.montoAdjudicadoLinea as 'Monto Adjudicado'
+					, instituciones.nombreInstitucion
+			FROM
+					[dbo].[hechAdjudicaciones] adjudicaciones
+					INNER JOIN [dbo].[dimProveedores] proveedores
+						ON adjudicaciones.proveedor = proveedores.idProveedor
+					INNER JOIN [dbo].[dimMonedas] monedas
+						ON adjudicaciones.monedaAdjudicada = monedas.idMoneda
+					INNER JOIN [dbo].[dimInstituciones] instituciones
+						ON adjudicaciones.institucion = instituciones.idInstitucion FOR XML PATH
+		END;
+GO;
+
 /*REQ-63 EMPRESAS CON MÁS OBJECIONES
   DESCRIPCIÓN: Este reporte presenta las empresas con más objeciones y que obstruyen los procesos de compra
 			   La información que se desea ver:
@@ -192,4 +268,6 @@ BEGIN
 			ON objeciones.proveedor = proveedores.idProveedor
 END
 GO
+
+select* from
 
