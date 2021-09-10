@@ -79,6 +79,7 @@ GO;
 						*	Cantidad de procedimientos adjudicados. 
 						*	Monto total adjudicado.
 */
+
 CREATE PROCEDURE REP_InstitucionesSICOP
 	AS
 		BEGIN
@@ -111,7 +112,7 @@ GO;
 					•	Vigencia de la Sanción
 					•	Fecha final de Sanción
 */
-select* from[dbo].[hechCarteles]
+
 CREATE PROCEDURE REP_SancionesProveedores
 	AS
 		BEGIN
@@ -132,6 +133,62 @@ CREATE PROCEDURE REP_SancionesProveedores
 			END;
 GO;
 
+/*REQ-36 REPORTES PROVEEDORES-CONTRATISTAS
+  DESCRIPCION:Reporte que muestra las órdenes de compra de cada proveedor.
+			  Mostrará información de proveedores más frecuentes medidos por cantidad de órdenes de compras
+			  y por monto económico adjudicado
+			  Se requiere un mapa de Costa Rica en el dashboard que permita al dar clic en una zona geográfica específica
+			  , abrir un cuadro de diálogo sobre información de la institución o empresa
+			  , y a su vez que genere el reporte con la información descrita a continuación.
+			  El mapa debe detallar
+			     1- ubicación de los proveedores, 
+				 2- ubicación de instituciones compradoras.
+*/
+select top 10* from[dbo].[dimContratos]
+select top 10* from[dbo].[hechCarteles]
+select top 10* from[dbo].[dimProcedimientos]
+select top 10* from[dbo].[hechAdjudicaciones]
+select top 10* from[dbo].[hechOfertas]
+select top 10* from[dbo].[hechInvitaciones]
+select top 10* from[dbo].[hechContrataciones]
+select top 10* from[dbo].[dimProductos]
+select top 10* from[dbo].[dimClasificacionProductos]
+select top 10* from[dbo].[dimProveedores]
+select top 10* from[dbo].[dimInstituciones]
+select top 10* from[dbo].[hechSanciones]
+select top 10* from[dbo].[hechCarteles]
+
+/*REQ-37 REPORTES PROVEEDORES-CONTRATISTAS
+  DESCRIPCION: Reporte que muestra los proveedores registrados en SICOP 
+			   y las instituciones públicas que compran bienes y servicios
+			   La información que se desea ver:
+					• Nombre del Proveedor
+					• Cédula del Proveedor
+					• Nombre de Institución
+					• Número de Procedimiento
+					• Descripción del Procedimiento
+					• Monto Adjudicado
+					• Estado del Concurso/Procedimiento
+*/
+
+SELECT 
+	proveedores.nombreProveedor
+	,proveedores.cedulaProveedor
+	,instituciones.nombreInstitucion
+	,procedimientos.numeroProcedimiento
+	,procedimientos.descripcionProcedimiento
+	,procedimientos.estadoProcedimiento
+	,adjudicaciones.montoAdjudicadoLinea
+FROM
+	[dbo].[hechAdjudicaciones] adjudicaciones
+	INNER JOIN[dbo].[dimProcedimientos] procedimientos
+		ON adjudicaciones.procedimiento = procedimientos.idProcedimiento
+	INNER JOIN [dbo].[dimInstituciones] instituciones
+		ON adjudicaciones.institucion=instituciones.idInstitucion
+	INNER JOIN [dbo].[dimProveedores] proveedores
+		ON adjudicaciones.proveedor = proveedores.idProveedor
+
+	
 
 /*REQ-38 FUNCIONARIO INHIBIDOS
   DESCRIPCION:Reporte que presenta los funcionarios inhibidos.
@@ -235,6 +292,48 @@ CREATE PROCEDURE REP_ProveedoresAdjudicados
 		END;
 GO;
 
+
+/*REQ-46 PROVEEDORES CON SANCIÓN  VERIFICAR
+  DESCRIPCION:Este reporte presenta información amplia de los proveedores
+              que han sido sancionados. La información que se desea desplegar es
+			  la siguiente:
+				•	Nombre y cedula de institución
+				•	Nombre y cedula de proveedor 
+				•	Tipo proveedor (Nacional Extranjero)
+				•	Tipo de la empresa (Grande Mediana Pequeña Micro emprendedor No clasificada).
+				•	Tipo de sanción (Inhabilitación, Apercibimiento).
+				•	Fecha de rige.
+				•	Fecha de vencimiento. 
+				•	Número de resolución.
+				•	Línea sancionada.
+				•	Estado de la sanción
+*/
+CREATE PROCEDURE REP_ProveedoresSancionados
+	AS
+		BEGIN
+			SELECT
+				  instituciones.nombreInstitucion as 'Nombre Institución'
+				, instituciones.cedulaInstitucion as 'Cédula Institución'
+				,proveedores.nombreProveedor as 'Nombre Proveedor'
+				, proveedores.cedulaProveedor as 'Cédula Proveedor'
+				, proveedores.tipoProveedor as 'Tipo de Proveedor'
+				,sanciones.tipoSancion as 'Tipo Sanción'
+				,tiempoInicio.fecha as 'Fecha Inicio Sanción'
+				,tiempoFinal.fecha as 'Fecha Final Sanción'
+				, sanciones.numeroResolucion as 'Número de Resolución'
+				, sanciones.estadoSancion as 'Estado Sanción'
+			FROM
+				[dbo].[hechSanciones] sanciones
+				INNER JOIN [dbo].[dimInstituciones] instituciones
+					ON sanciones.institucion = instituciones.idInstitucion
+				INNER JOIN [dbo].[dimProveedores] proveedores
+					ON sanciones.proveedor= proveedores.idProveedor
+				INNER JOIN [dbo].[dimTiempo] tiempoInicio
+					ON sanciones.fechaInicioSancion= tiempoInicio.idTiempo
+				INNER JOIN [dbo].[dimTiempo] tiempoFinal
+					ON sanciones.fechaFinalSancion= tiempoInicio.idTiempo
+END;
+GO;
 /*REQ-63 EMPRESAS CON MÁS OBJECIONES
   DESCRIPCIÓN: Este reporte presenta las empresas con más objeciones y que obstruyen los procesos de compra
 			   La información que se desea ver:
@@ -268,6 +367,4 @@ BEGIN
 			ON objeciones.proveedor = proveedores.idProveedor
 END
 GO
-
-select* from
 
