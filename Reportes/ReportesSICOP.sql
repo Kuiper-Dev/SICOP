@@ -1,5 +1,5 @@
 
-/* REQ-28 TIPO DE PROCEDIMIENTOS SICOP
+/* REQ-28 TIPO DE PROCEDIMIENTOS SICOP FINIQUITADO
    DESCRIPCION: Generar un reporte que detalle los distintos tipos de figuras 
 				contractuales que se realizan en SICOP. Entiéndase por tipo de procedimiento: 
 				(esto debe mostrarse en la descripción del reporte: 
@@ -22,6 +22,13 @@ CREATE PROCEDURE REP_Procedimientos
 			GROUP BY procedimiento.tipoProcedimiento 
 		END;
 GO;
+
+/*REQ-29 COMPRAS POR INSTITUCION, PRODUCTOS, PRECIO AÑO*/
+
+
+/*REQ-30 MERCANCIAS, SERVICIOS Y BIENES MAS COMPRADOS*/
+
+	
 
 /*REQ-31 Invitados y Ofertas por proceso MODIFICAR
   DESCRIPCIÓN:Reporte donde muestra los proveedores que han sido invitados 
@@ -80,6 +87,7 @@ GO;
 						*	Monto total adjudicado.
 */
 
+	
 CREATE PROCEDURE REP_InstitucionesSICOP
 	AS
 		BEGIN
@@ -91,12 +99,16 @@ CREATE PROCEDURE REP_InstitucionesSICOP
 								THEN 1 
 								ELSE 0 
 									END) as 'Procedimientos adjudicados'
+					
+					
 			FROM 
 				[dbo].[hechCarteles] carteles
 				INNER JOIN[dbo].[dimInstituciones] instituciones
 					ON carteles.institucion = instituciones.idInstitucion
 				INNER JOIN [dbo].[dimProcedimientos] procedimientos
 					ON carteles.procedimiento=procedimientos.idProcedimiento
+				
+
 			GROUP BY instituciones.nombreInstitucion, instituciones.fechaIngreso 
 		END;
 GO;
@@ -112,7 +124,6 @@ GO;
 					•	Vigencia de la Sanción
 					•	Fecha final de Sanción
 */
-
 CREATE PROCEDURE REP_SancionesProveedores
 	AS
 		BEGIN
@@ -144,19 +155,7 @@ GO;
 			     1- ubicación de los proveedores, 
 				 2- ubicación de instituciones compradoras.
 */
-select top 10* from[dbo].[dimContratos]
-select top 10* from[dbo].[hechCarteles]
-select top 10* from[dbo].[dimProcedimientos]
-select top 10* from[dbo].[hechAdjudicaciones]
-select top 10* from[dbo].[hechOfertas]
-select top 10* from[dbo].[hechInvitaciones]
-select top 10* from[dbo].[hechContrataciones]
-select top 10* from[dbo].[dimProductos]
-select top 10* from[dbo].[dimClasificacionProductos]
-select top 10* from[dbo].[dimProveedores]
-select top 10* from[dbo].[dimInstituciones]
-select top 10* from[dbo].[hechSanciones]
-select top 10* from[dbo].[hechCarteles]
+
 
 /*REQ-37 REPORTES PROVEEDORES-CONTRATISTAS
   DESCRIPCION: Reporte que muestra los proveedores registrados en SICOP 
@@ -187,6 +186,7 @@ FROM
 		ON adjudicaciones.institucion=instituciones.idInstitucion
 	INNER JOIN [dbo].[dimProveedores] proveedores
 		ON adjudicaciones.proveedor = proveedores.idProveedor
+
 
 	
 
@@ -263,6 +263,9 @@ CREATE PROCEDURE REP_DetallesCartel
 			END;
 GO;
 
+/*REQ-40 DETALLE LINEAS CARTEL
+  DESCRIPCION: */
+
 /*REQ-42
   DESCRIPCIÓN: Presenta en detalle variables de los Proveedores adjudicados.
 			   La información que se desea ver:
@@ -292,7 +295,46 @@ CREATE PROCEDURE REP_ProveedoresAdjudicados
 		END;
 GO;
 
-
+/*REQ-44 Contratos
+  DESCRIPCIONES:Presenta en detalle variables de los contratos realizados.
+	La información que se desea ver:
+	•	Número de procedimiento
+	•	Nombre y cédula de la institución
+	•	Nombre y cédula del contratista 
+	•	Código de producto
+	•	Descripción del producto
+	•	Número de Contrato.
+	•	Secuencia.
+	•	Modificación.
+		o	Suspensión de contrato
+		o	suspensión de plazo de entrega
+		o	modificación unilateral al contrato
+		o	prorrogas al contrato
+		o	Otras.
+	•	Fecha de Modificación.
+	•	Tipo de Autorización.
+	•	Tipo de Disminución. 
+*/
+select top 10* from [dbo].[dimContratos]
+select top 10* from [dbo].[hechContrataciones]
+select top 10* from [dbo].[hechAdjudicaciones]
+select top 10* from [dbo].[hechCarteles]
+select top 10* from [dbo].[dimProcedimientos]
+select top 10* from [dbo].[hechOfertas]
+SELECT 
+	procedimientos.numeroProcedimiento
+	, instituciones.nombreInstitucion
+	, instituciones.cedulaInstitucion
+	, proveedores.nombreProveedor
+	, proveedores.cedulaProveedor
+FROM
+	[dbo].[dimContratos] contratos
+	INNER JOIN [dbo].[dimProcedimientos] procedimientos
+		ON contratos.procedimiento=procedimientos.idProcedimiento
+	INNER JOIN [dbo].[dimInstituciones] instituciones
+		ON contratos.institucion = instituciones.idInstitucion
+	INNER JOIN [dbo].[dimProveedores] proveedores
+		ON contratos.proveedor=proveedores.idProveedor
 /*REQ-46 PROVEEDORES CON SANCIÓN  VERIFICAR
   DESCRIPCION:Este reporte presenta información amplia de los proveedores
               que han sido sancionados. La información que se desea desplegar es
@@ -334,6 +376,38 @@ CREATE PROCEDURE REP_ProveedoresSancionados
 					ON sanciones.fechaFinalSancion= tiempoInicio.idTiempo
 END;
 GO;
+
+
+/*REQ-50 REMATES
+  DESCRIPCION:Presenta detalle de las variables de procedimientos de remate.
+              La información que se desea desplegar es la siguiente:
+				•	Cédula de la institución que realizó el remate. 
+				•	Nombre de la Institución que realizó el remate. 
+				•	Número de procedimiento.
+				•	Número de cartel.
+				•	Tipo de procedimiento.
+				•	Modalidad: remate.
+				•	Fecha de apertura (dd/mm/aaaa).
+				•	Fecha de invitación (dd/mm/aaaa).
+				•	Partida.
+				•	Línea.
+*/
+/*REQ-51 GIRO COMERCIAL DEL CONTRATISTA
+  DESCRIPCION:Presenta el detalle de los contratistas que han sido adjudicado
+			  para dar un servicio o bien u obra, corresponda al giro comercial
+			  al cual está registrado.
+				La información que se desea ver:
+				•	Nombre de proveedor
+				•	Cédula proveedor.
+				•	Giro de Negocio (o tipo de negocio con el que se registró como proveedor).
+				•	Descripción del Procedimiento
+				•	Descripción del objeto contractual adjudicado
+				•	Código de Identificación adjudicado
+				•	Subpartida
+				•	Tipo de moneda
+				•	Monto adjudicado 
+				•	Nombre de la Institución
+*/
 /*REQ-63 EMPRESAS CON MÁS OBJECIONES
   DESCRIPCIÓN: Este reporte presenta las empresas con más objeciones y que obstruyen los procesos de compra
 			   La información que se desea ver:
