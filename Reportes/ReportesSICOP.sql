@@ -321,6 +321,9 @@ select top 10* from [dbo].[hechAdjudicaciones]
 select top 10* from [dbo].[hechCarteles]
 select top 10* from [dbo].[dimProcedimientos]
 select top 10* from [dbo].[hechOfertas]
+select top 10* from [dbo].[hechInvitaciones] invitaciones 
+left join [dbo].[hechOfertas] ofertas 
+on invitaciones.proveedor = ofertas.proveedor
 SELECT 
 	procedimientos.numeroProcedimiento
 	, instituciones.nombreInstitucion

@@ -36,7 +36,7 @@ CREATE PROCEDURE REP_Mercancias
 		END;
 GO;
 
-/*REQ-31 Invitados y Ofertas por proceso MODIFICAR
+/*REQ-31 Invitados y Ofertas por proceso FINIQUITADO
   DESCRIPCIÓN:Reporte donde muestra los proveedores que han sido invitados 
               a cada licitación (proceso) realizada.
 				•	Número de procedimiento.
@@ -49,39 +49,44 @@ GO;
 				•	Código de producto.
 				•	Cantidad de unidades.
 */
-
+use[dw_sicop]
+EXEC REP_InvitadosYOfertas
 CREATE PROCEDURE REP_InvitadosYOfertas
 	AS
 		BEGIN
 			SELECT
-				procedimientos.numeroProcedimiento as 'Numero de Procedimiento'
-				, proveedores.nombreProveedor as 'Nombre Proveedor'
-				, proveedores.cedulaProveedor as 'Cedula Proveedor'
-				, tiempo.fecha as 'Fecha Publicacion Cartel'
-				, tiempoApertura.fecha as 'Fecha Apertura'
-				, productos.codigoProducto as 'Código de Producto'
-
-
+				procedimientos.numeroProcedimiento as 'Número de Procedimiento'
+				,proveedores.nombreProveedor as 'NombreProveedor'
+				,proveedores.cedulaProveedor as 'Cédula Proveedor'
+				,tiempoPresentacion.fecha as 'Participó'
+				,tiempoPublicacion.fecha as 'Fecha Publicacion'
+				,tiempoApertura.fecha as 'Fecha Apertura'
+				,productos.codigoProducto as 'Código Producto'
+				,ofertas.cantidadOfertada as 'Cantidad de Unidades'
 			FROM
 				[dbo].[hechInvitaciones] invitaciones
-				INNER JOIN [dbo].[dimProcedimientos] procedimientos
-					ON invitaciones.procedimiento = procedimientos.idProcedimiento
-				INNER JOIN [dbo].[dimProveedores] proveedores
-					ON invitaciones.proveedor =proveedores.idProveedor
+				INNER JOIN[dbo].[dimProcedimientos] procedimientos
+					ON invitaciones.procedimiento=procedimientos.idProcedimiento
+				INNER JOIN[dbo].[dimProveedores] proveedores
+					ON invitaciones.proveedor=proveedores.idProveedor
+				LEFT JOIN [dbo].[hechOfertas] ofertas
+					ON invitaciones.proveedor= ofertas.proveedor
+				LEFT JOIN [dbo].[dimTiempo] tiempoPresentacion
+					ON ofertas.fechaPresentacion=tiempoPresentacion.idTiempo
 				INNER JOIN [dbo].[hechCarteles] carteles
-					ON invitaciones.procedimiento = carteles.procedimiento
-				INNER JOIN [dbo].[dimTiempo] tiempo
-					ON carteles.fechaPublicacion = tiempo.idTiempo
+					ON invitaciones.procedimiento=carteles.procedimiento
+				INNER JOIN [dbo].[dimTiempo] tiempoPublicacion
+					ON carteles.fechaPublicacion=tiempoPublicacion.idTiempo
 				INNER JOIN [dbo].[dimTiempo] tiempoApertura
-					ON carteles.fechaApertura = tiempoApertura.idTiempo
+					ON carteles.fechaApertura=tiempoApertura.idTiempo
 				INNER JOIN [dbo].[dimProductos] productos
-					ON carteles.clasificacionProducto = productos.clasificacionProducto
-
-
+					ON ofertas.producto = productos.idProducto
 		END;
 GO;
 
-/*REQ-34 INSTITUCIONES QUE UTILIZAN SICOP
+
+
+/*REQ-34 INSTITUCIONES QUE UTILIZAN SICOP FINIQUITADO
   DESCRIPCIÓN: Reporte que facilitará el conocimiento de todas las instituciones que utilizan SICOP. 
 			   Poder visualizar las instituciones de Compradoras de Gobierno, 
 			   Central, Adscritas, desconcentradas o autónomas. 
@@ -93,28 +98,41 @@ GO;
 						*	Cantidad de procedimientos adjudicados. 
 						*	Monto total adjudicado.
 */
+
+
 CREATE PROCEDURE REP_InstitucionesSICOP
 	AS
 		BEGIN
-			SELECT	instituciones.nombreInstitucion as 'Nombre Institución'
-					, instituciones.fechaIngreso as 'Fecha de Ingreso'
-					, count(procedimientos.idProcedimiento) as 'Total de Procedimientos'
-					,SUM(CASE 
+			SELECT
+				T0.nombreInstitucion as 'Nombre de la Institución'
+				,T0.fechaIngreso as 'Fecha de Ingreso'
+				, tiempoAdjudicacion.fecha as 'Fecha Primera Adjudicación'
+				,T0.[Total Procedimientos] as 'Total de Procedimientos'
+				,T0.[Procedimientos adjudicados] as 'Procedimientos Adjudicados'
+				, SUM(adjudicaciones.montoAdjudicadoLineaUSD) as 'Monto Total Adjudicado'
+
+			FROM
+				(SELECT
+				instituciones.idInstitucion
+				,instituciones.nombreInstitucion
+				,instituciones.fechaIngreso
+				,COUNT(procedimientos.idProcedimiento) as 'Total Procedimientos'
+				,SUM(CASE 
 							WHEN procedimientos.estadoProcedimiento like'Adjudicado'
 								THEN 1 
 								ELSE 0 
 									END) as 'Procedimientos adjudicados'
-					
-					
-			FROM 
-				[dbo].[hechCarteles] carteles
-				INNER JOIN[dbo].[dimInstituciones] instituciones
-					ON carteles.institucion = instituciones.idInstitucion
-				INNER JOIN [dbo].[dimProcedimientos] procedimientos
-					ON carteles.procedimiento=procedimientos.idProcedimiento
-				
-
-			GROUP BY instituciones.nombreInstitucion, instituciones.fechaIngreso 
+			FROM
+				[dbo].[dimProcedimientos]procedimientos
+				INNER JOIN [dbo].[dimInstituciones] instituciones
+					ON procedimientos.institucion= instituciones.idInstitucion
+	
+			GROUP BY instituciones.idInstitucion,instituciones.nombreInstitucion, instituciones.fechaIngreso) AS T0
+			INNER JOIN [dbo].[hechAdjudicaciones] adjudicaciones
+				ON T0.idInstitucion=adjudicaciones.institucion
+			INNER JOIN [dbo].[dimTiempo] tiempoAdjudicacion
+				ON adjudicaciones.fechaAdjudicacionFirme = tiempoAdjudicacion.idTiempo
+			GROUP BY T0.nombreInstitucion, T0.fechaIngreso, tiempoAdjudicacion.fecha, T0.[Total Procedimientos], T0.[Procedimientos adjudicados]
 		END;
 GO;
 
