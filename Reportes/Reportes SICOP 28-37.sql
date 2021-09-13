@@ -49,7 +49,6 @@ GO;
 				•	Código de producto.
 				•	Cantidad de unidades.
 */
-use[dw_sicop]
 EXEC REP_InvitadosYOfertas
 CREATE PROCEDURE REP_InvitadosYOfertas
 	AS
@@ -84,8 +83,57 @@ CREATE PROCEDURE REP_InvitadosYOfertas
 		END;
 GO;
 
+/*REQ-33 COMPARATIVO PRECIO DE UN PRODUCTO POR INSTITUCION FINIQUITADO
+  DESCRIPCION: Reporte que presenta los precios finales de los códigos de producto adquiridos 
+               en diferentes procesos de contratación.
+				La información a presentar es la siguiente:
+				•	Instituciones.
+				•	Números de procedimiento.
+				•	Código de producto.
+				•	Descripción del bien o servicio.
+				•	Precios de producto.
+				•	Fecha de adjudicación.
+				•	Nombre Contratista.
+				•	Cedula del contratista.
+*/
 
+CREATE PROCEDURE REP_ComparativaPrecioProducto
+	AS
+		BEGIN
+			SELECT
+				instituciones.nombreInstitucion
+				, procedimientos.numeroProcedimiento
+				, productos.codigoProducto
+				, productos.descripcionProducto
+				, adjudicaciones.montoAdjudicadoLinea
+				, tiempoAdjudicacion.fecha
+				, proveedores.nombreProveedor
+				, proveedores.cedulaProveedor
+				
+			FROM
+				[dbo].[hechAdjudicaciones] adjudicaciones
+				INNER JOIN [dbo].[dimInstituciones] instituciones
+					ON adjudicaciones.institucion= instituciones.idInstitucion
+				INNER JOIN [dbo].[dimProcedimientos] procedimientos
+					ON adjudicaciones.procedimiento= procedimientos.idProcedimiento
+				INNER JOIN [dbo].[dimProductos] productos
+					ON adjudicaciones.producto= productos.idProducto
+				INNER JOIN [dbo].[dimProveedores] proveedores
+					ON adjudicaciones.proveedor= proveedores.idProveedor
+				INNER JOIN [dbo].[dimTiempo] tiempoAdjudicacion
+					ON adjudicaciones.fechaAdjudicacionFirme= tiempoAdjudicacion.idTiempo
+				GROUP BY instituciones.nombreInstitucion
+						,procedimientos.numeroProcedimiento
+						,productos.codigoProducto
+						,productos.descripcionProducto
+						,adjudicaciones.montoAdjudicadoLinea
+						,tiempoAdjudicacion.fecha
+						,proveedores.nombreProveedor
+						,proveedores.cedulaProveedor
+						
 
+		END;
+GO;
 /*REQ-34 INSTITUCIONES QUE UTILIZAN SICOP FINIQUITADO
   DESCRIPCIÓN: Reporte que facilitará el conocimiento de todas las instituciones que utilizan SICOP. 
 			   Poder visualizar las instituciones de Compradoras de Gobierno, 
@@ -179,11 +227,24 @@ GO;
 */
 
 CREATE PROCEDURE REP_ProveedoresYOrdenes
-AS
-BEGIN
-END;
+	AS
+		BEGIN
+			SELECT 
+				 proveedores.nombreProveedor
+				,proveedores.provinciaProveedor
+				,proveedores.cantonProveedor
+				,proveedores.distritoProveedor
+				, instituciones.nombreInstitucion
+				,instituciones.provinciaInstitucion
+				,instituciones.cantonInstitucion
+				,instituciones.distritoInstitucion
+			FROM
+				[dbo].[dimProveedores] proveedores,
+				[dbo].[dimInstituciones] instituciones
+				
+		END;
 GO;
-/*REQ-37 REPORTES PROVEEDORES-CONTRATISTAS
+/*REQ-37 REPORTES PROVEEDORES-CONTRATISTAS FINIQUITADO
   DESCRIPCION: Reporte que muestra los proveedores registrados en SICOP 
 			   y las instituciones públicas que compran bienes y servicios
 			   La información que se desea ver:
@@ -198,5 +259,27 @@ GO;
 CREATE PROCEDURE REP_Proveedores
 AS
 BEGIN
+	SELECT
+		proveedores.nombreProveedor as 'Nombre Proveedor'
+		,proveedores.cedulaProveedor as 'Cédula Proveedor'
+		, instituciones.nombreInstitucion as 'Nombre Institución'
+		, procedimientos.numeroProcedimiento as 'Nuúmero de Procedimiento'
+		, procedimientos.descripcionProcedimiento as 'Descripción del Procedimiento'
+		, SUM(adjudicaciones.montoAdjudicadoLinea) as 'Monto Adjudicado'
+		, procedimientos.estadoProcedimiento as 'Estado del Procedimiento'
+	FROM
+		[dbo].[hechAdjudicaciones] adjudicaciones
+		INNER JOIN [dbo].[dimProveedores] proveedores
+			ON adjudicaciones.proveedor = proveedores.idProveedor
+		INNER JOIN [dbo].[dimProcedimientos] procedimientos
+			ON adjudicaciones.procedimiento= procedimientos.idProcedimiento
+		INNER JOIN [dbo].[dimInstituciones] instituciones
+			ON adjudicaciones.institucion= instituciones.idInstitucion
+		GROUP BY proveedores.nombreProveedor
+				, proveedores.cedulaProveedor
+				, instituciones.nombreInstitucion
+				, procedimientos.numeroProcedimiento
+				, procedimientos.descripcionProcedimiento
+				, procedimientos.estadoProcedimiento
 END;
 GO;
