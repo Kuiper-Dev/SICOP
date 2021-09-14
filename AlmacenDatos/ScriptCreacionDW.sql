@@ -210,7 +210,7 @@ CREATE TABLE hechAdjudicaciones(
 	clasificacionProducto BIGINT NOT NULL,
 	numeroOferta VARCHAR(50) NOT NULL,
 	producto BIGINT NOT NULL,
-	numeroActo SMALLINT NOT NULL,
+	numeroActo INTEGER NOT NULL,
 	cantidadAdjudicada INTEGER NOT NULL,
 	precioUnitarioAdjudicado MONEY NOT NULL,
 	acarreo MONEY NOT NULL,
@@ -265,6 +265,227 @@ CREATE TABLE hechObjeciones(
 		REFERENCES dimProcedimientos(idProcedimiento)	
 )
 
+CREATE TABLE hechRemates(
+	procedimiento BIGINT NOT NULL,
+	proveedor BIGINT NOT NULL,
+	fechaInvitacion BIGINT NOT NULL,
+	monedaPuja INTEGER NOT NULL,
+	montoPuja MONEY NOT NULL,
+	montoEstimadoLinea MONEY NOT NULL,
+	cantidadEstimada INTEGER NOT NULL,
+	monedaAdjudicada INTEGER NOT NULL,
+	montoAdjudicado MONEY NOT NULL,
+	cantidadAdjudicada INTEGER NOT NULL,
+	tipoCambioMoneda MONEY NOT NULL,	
+	-- CONSTRAINT pk_,		
+	CONSTRAINT fk_hechRemates_dimProcedimientos FOREIGN KEY (procedimiento)
+		REFERENCES dimProcedimientos(idProcedimiento),
+	CONSTRAINT fk_hechRemates_dimProveedores FOREIGN KEY (proveedor)
+		REFERENCES dimProveedores(idProveedor),	
+	CONSTRAINT fk_hechRemates_dimTiempo FOREIGN KEY (fechaInvitacion)
+		REFERENCES dimTiempo(idTiempo),
+	CONSTRAINT fk_hechRemates_dimMonedasA FOREIGN KEY (monedaAdjudicada)
+		REFERENCES dimMonedas(idMoneda),
+	CONSTRAINT fk_hechRemates_dimMonedasP FOREIGN KEY (monedaPuja)
+		REFERENCES dimMonedas(idMoneda)	
+)
+
+CREATE TABLE hechContrataciones(
+	contrato BIGINT NOT NULL,
+	procedimiento BIGINT NOT NULL,
+	secuencia VARCHAR(3) NOT NULL,
+	proveedor BIGINT NOT NULL,
+	fechaInicioProrroga BIGINT NOT NULL,
+	fechaFinalProrroga BIGINT NOT NULL,
+	vigencia VARCHAR(20) NOT NULL,
+	moneda INTEGER NOT NULL,
+	fechaInicioSuspension BIGINT NOT NULL,
+	fechaReanudacionContrato BIGINT NOT NULL,
+	plazoSuspension INTEGER NOT NULL,
+	tipoContrato VARCHAR(10) NOT NULL,
+	tipoModificacion VARCHAR(100) NOT NULL,
+	fechaModificacion BIGINT NOT NULL,
+	fechaNotificacion BIGINT NOT NULL,
+	fechaElaboracion BIGINT NOT NULL,
+	tipoAutorizacion VARCHAR(50) NOT NULL,
+	tipoDisminucion VARCHAR(8) NOT NULL,
+	numeroLineaContrato SMALLINT NOT NULL,
+	numeroLineaCartel SMALLINT NOT NULL,
+	cantidadAumentada FLOAT NOT NULL,
+	cantidadDisminuida FLOAT NOT NULL,
+	montoAumentado MONEY NOT NULL,
+	montoDisminuido MONEY NOT NULL,
+	otrosImpuestos MONEY NOT NULL,
+	acarreos	MONEY NOT NULL,
+	tipoCambioCRC	MONEY NOT NULL,
+	tipoCambioUSD MONEY NOT NULL,
+	numeroActo	INTEGER NOT NULL,
+	producto BIGINT NOT NULL,
+	cantidadContratada INTEGER NOT NULL,
+	precioUnitario MONEY NOT NULL,
+	moneda INTEGER NOT NULL,
+	descuento MONEY NOT NULL,
+	IVA MONEY NOT NULL,
+	-- CONSTRAINT pk_,
+	CONSTRAINT fk_hechContrataciones_dimContratos FOREIGN KEY (contrato)
+		REFERENCES dimContratos(idContrato),
+	CONSTRAINT fk_hechContrataciones_dimProcedimientos FOREIGN KEY (procedimiento)
+		REFERENCES dimProcedimientos(idProcedimiento),
+	CONSTRAINT fk_hechContrataciones_dimProveedores FOREIGN KEY (proveedor)
+		REFERENCES dimProveedores(idProveedor),
+	CONSTRAINT fk_hechContrataciones_dimTiempoIP FOREIGN KEY (fechaInicioProrroga)
+		REFERENCES dimTiempo(idTiempo),
+	CONSTRAINT fk_hechContrataciones_dimTiempoFP FOREIGN KEY (fechaFinalProrroga)
+		REFERENCES dimTiempo(idTiempo),
+	CONSTRAINT fk_hechContrataciones_dimTiempoIS FOREIGN KEY (fechaInicioSuspension)
+		REFERENCES dimTiempo(idTiempo),
+	CONSTRAINT fk_hechContrataciones_dimTiempoRC FOREIGN KEY (fechaReanudacionContrato)
+		REFERENCES dimTiempo(idTiempo),
+	CONSTRAINT fk_hechContrataciones_dimTiempoFM FOREIGN KEY (fechaModificacion)
+		REFERENCES dimTiempo(idTiempo),
+	CONSTRAINT fk_hechContrataciones_dimTiempoFN FOREIGN KEY (fechaNotificacion)
+		REFERENCES dimTiempo(idTiempo),
+	CONSTRAINT fk_hechContrataciones_dimTiempoFE FOREIGN KEY (fechaElaboracion)
+		REFERENCES dimTiempo(idTiempo),
+	CONSTRAINT fk_hechContrataciones_dimProductos FOREIGN KEY (producto)
+		REFERENCES	dimProductos(idProducto),
+	CONSTRAINT fk_Contrataciones_dimMonedas FOREIGN KEY	(moneda)
+		REFERENCES dimMonedas(idMoneda)
+)
+
+CREATE TABLE hechGarantias(
+	procedimiento BIGINT NOT NULL,
+	fechaRegistro BIGINT NOT NULL,
+	proveedor BIGINT NOT NULL,
+	numeroGarantia VARCHAR(30) NOT NULL,
+	cedulaGarante VARCHAR(10) NOT NULL,
+	secuenciaGarantia VARCHAR(3) NOT NULL,
+	tipoGarantia VARCHAR(30) NOT NULL,
+	monto MONEY NOT NULL,
+	estado VARCHAR(50) NOT NULL,
+	vigencia BIGINT NOT NULL,
+	--CONSTRAINT pk_hechGarantias,
+	CONSTRAINT fk_hechGarantias_dimProcedimientos FOREIGN KEY (procedimiento)
+		REFERENCES dimProcedimientos(idProcedimiento),
+	CONSTRAINT fk_hechGarantias_dimTiempo FOREIGN KEY (fechaRegistro)
+		REFERENCES dimTiempo(idTiempo),
+	CONSTRAINT fk_hechGarantias_dimProveedores FOREIGN KEY (proveedor)
+		REFERENCES dimProveedores(idProveedor),
+	CONSTRAINT fk_hechGarantias_dimTiempoV FOREIGN KEY (vigencia)
+		REFERENCES dimTiempo(idTiempo)
+)
+
+CREATE TABLE hechReajustesPrecio(
+	procedimiento BIGINT NOT NULL,
+	proveedor BIGINT NOT NULL,
+	fechaInicio BIGINT NOT NULL,
+	fechaFin BIGINT NOT NULL,
+	mesesAAplicar SMALLINT NOT NULL,
+	diasAAplicar SMALLINT NOT NULL,
+	moneda INTEGER NOT NULL,
+	montoTotal MONEY NOT NULL,
+	precioUnitario MONEY NOT NULL,
+	numeroReajuste SMALLINT NOT NULL,
+	precioAnteriorUltimoReajuste MONEY NOT NULL,
+	montoReajuste MONEY NOT NULL,
+	nuevoPrecio MONEY NOT NULL,
+	porcentajeIncrementoUltimoReajuste DECIMAL(5,2) NOT NULL,
+	fechaElaboracion BIGINT NOT NULL,
+	producto BIGINT NOT NULL,
+	contrato BIGINT NOT NULL,
+	numeroLineaContrato SMALLINT NOT NULL,
+	cantidadContratada INTEGER NOT NULL,
+	--CONSTRAINT pk_hechReajustesPrecio
+	CONSTRAINT fk_hechReajustesPrecio_dimProcedimientos FOREIGN KEY (procedimiento)
+		REFERENCES dimProcedimientos(idProcedimiento),
+	CONSTRAINT fk_hechReajustesPrecio_dimProveedores FOREIGN KEY (proveedor)
+		REFERENCES dimProveedores(idProveedor),
+	CONSTRAINT fk_hechReajustesPrecio_dimTiempoI FOREIGN KEY (fechaInicio)
+		REFERENCES dimTiempo(idTiempo),
+	CONSTRAINT fk_hechReajustesPrecio_dimTiempoF FOREIGN KEY (fechaFin)
+		REFERENCES dimTiempo(idTiempo),
+	CONSTRAINT fk_hechReajustesPrecio_dimTiempoE FOREIGN KEY (fechaElaboracion)
+		REFERENCES dimTiempo(idTiempo),
+	CONSTRAINT fk_hechReajustesPrecio_dimMonedas FOREIGN KEY (moneda)
+		REFERENCES dimMonedas(idMoneda),
+	CONSTRAINT fk_hechReajustesPrecio_dimProductos FOREIGN KEY (producto)
+		REFERENCES dimProductos(idProducto),
+	CONSTRAINT fk_hechREajustesPrecio_dimContratos FOREIGN KEY (contrato)
+		REFERENCES dimContratos(idContrato)
+)
+
+CREATE TABLE hechOrdenesPedido(
+	contrato BIGINT NOT NULL,
+	secuenciaContrato VARCHAR(3) NOT NULL,
+	numeroOrden VARCHAR(16) NOT NULL,
+	fechaElaboracion BIGINT NOT NULL,
+	fechaNotificacion BIGINT NOT NULL,
+	fechaRecepcionPedido BIGINT NOT NULL, 
+	lineaOrdenPedido SMALLINT NOT NULL,
+	secuenciaOrden VARCHAR(3) NOT NULL,
+	moneda INTEGER NOT NULL,
+	totalOrden MONEY NOT NULL,
+	totalEstimado MONEY NOT NULL,
+	montoUSD MONEY NOT NULL,
+	estadoOrden VARCHAR(50) NOT NULL,
+	--CONSTRAINT pk_hechOrdenesPedido
+	CONSTRAINT fk_hechOrdenesPedido_dimContratos FOREIGN KEY (contrato)
+		REFERENCES dimContratos(idContrato),
+	CONSTRAINT fk_hechOrdenesPedido_dimTiempoFE FOREIGN KEY (fechaElaboracion)
+		REFERENCES dimTiempo(idTiempo),
+	CONSTRAINT fk_hechOrdenesPedido_dimTiempoFN FOREIGN KEY (fechaNotificacion)
+		REFERENCES dimTiempo(idTiempo),
+	CONSTRAINT fk_hechOrdenesPedido_dimTiempoFR FOREIGN KEY (fechaRecepcionPedido)
+		REFERENCES dimTiempo(idTiempo),
+	CONSTRAINT fk_hechOrdenesPedido_dimMonedas FOREIGN KEY (moneda)
+		REFERENCES dimMonedas(idMoneda)
+)
+
+CREATE TABLE hechRecepciones(
+	contrato BIGINT NOT NULL,
+	numeroRecepcionDefinitiva VARCHAR(30) NOT NULL,
+	fechaRecepcionDefinitiva BIGINT NOT NULL,
+	moneda INTEGER NOT NULL,
+	fechaEntregaInicial BIGINT NOT NULL,
+	secuencia VARCHAR(3) NOT NULL,
+	numeroRecepcionProvisional VARCHAR(30) NOT NULL,
+	estadoRecepcionProvisional VARCHAR(50) NOT NULL,
+	precio MONEY NOT NULL,
+	diasAdelantoAtraso INTEGER NOT NULL,
+	estadoRecepcionDefinitiva VARCHAR(50) NOT NULL,
+	numeroLinea SMALLINT NOT NULL,
+	entrega SMALLINT NOT NULL,
+	producto BIGINT NOT NULL,
+	cantidadRealRecibida INTEGER NOT NULL,
+	--CONSTRAINT pk_hechRecepciones,
+	CONSTRAINT fk_hechRecepciones_dimContratos FOREIGN KEY (contrato)
+		REFERENCES dimContratos(idContrato),
+	CONSTRAINT fk_hechRecepciones_dimTiempoRD FOREIGN KEY (fechaRecepcionDefinitiva)
+		REFERENCES dimTiempo(idTiempo),
+	CONSTRAINT fk_hechRecepciones_dimTiempoEI FOREIGN KEY (fechaEntregaInicial)
+		REFERENCES dimTiempo(idTiempo),
+	CONSTRAINT fk_hechRecepciones_dimMonedas FOREIGN KEY (moneda)
+		REFERENCES dimMonedas(idMoneda),
+	CONSTRAINT fk_hechRecepciones_dimProductos FOREIGN KEY (producto)
+		REFERENCES dimProductos(idProducto),
+)
+
+CREATE TABLE hechProcAdministrativos(
+	procedimiento BIGINT NOT NULL,
+	proveedor BIGINT NOT NULL,
+	numeroProcAdm VARCHAR(30) NOT NULL,
+	fechaNotificacion BIGINT NOT NULL,
+	tipoProcedimientoAdm VARCHAR(30) NOT NULL, 
+	multaClausula VARCHAR(30) NOT NULL, 
+	--CONSTRAINT pk_hechProcAdministrativos,
+	CONSTRAINT fk_hechProcAdministrativos_dimProcedimientos FOREIGN KEY (procedimiento)
+		REFERENCES dimProcedimientos(idProcedimiento),
+	CONSTRAINT fk_hechProcAdministrativos_dimTiempo FOREIGN KEY (fechaNotificacion)
+		REFERENCES dimTiempo(idTiempo),
+	CONSTRAINT fk_hechProcAdministrativos_dimProveedores FOREIGN KEY (proveedor)
+		REFERENCES dimProveedores(idProveedor)
+)
+
 CREATE TABLE hechSanciones(
 	institucion BIGINT NOT NULL,
 	proveedor BIGINT NOT NULL,
@@ -312,69 +533,4 @@ CREATE TABLE hechInhibicionesFuncionario(
 		REFERENCES dimTiempo(idTiempo)
 )
 
-CREATE TABLE hechRemates(
-	procedimiento BIGINT NOT NULL,
-	proveedor BIGINT NOT NULL,
-	fechaInvitacion BIGINT NOT NULL,
-	monedaPuja INTEGER NOT NULL,
-	montoPuja MONEY NOT NULL,
-	montoEstimadoLinea MONEY NOT NULL,
-	cantidadEstimada INTEGER NOT NULL,
-	monedaAdjudicada INTEGER NOT NULL,
-	montoAdjudicado MONEY NOT NULL,
-	cantidadAdjudicada INTEGER NOT NULL,
-	tipoCambioMoneda MONEY NOT NULL,	
-	-- CONSTRAINT pk_,		
-	CONSTRAINT fk_hechRemates_dimProcedimientos FOREIGN KEY (procedimiento)
-		REFERENCES dimProcedimientos(idProcedimiento),
-	CONSTRAINT fk_hechRemates_dimProveedores FOREIGN KEY (proveedor)
-		REFERENCES dimProveedores(idProveedor),	
-	CONSTRAINT fk_hechRemates_dimTiempo FOREIGN KEY (fechaInvitacion)
-		REFERENCES dimTiempo(idTiempo),
-	CONSTRAINT fk_hechRemates_dimMonedasA FOREIGN KEY (monedaAdjudicada)
-		REFERENCES dimMonedas(idMoneda),
-	CONSTRAINT fk_hechRemates_dimMonedasP FOREIGN KEY (monedaPuja)
-		REFERENCES dimMonedas(idMoneda)	
-)
-
-CREATE TABLE hechContrataciones(
-	contrato BIGINT NOT NULL,
-	procedimiento BIGINT NOT NULL,
-	secuencia VARCHAR(3) NOT NULL,
-	fechaInicioProrroga BIGINT NOT NULL,
-	fechaFinalProrroga BIGINT NOT NULL,
-	vigencia VARCHAR(20) NOT NULL,
-	moneda INTEGER NOT NULL,
-	fechaInicioSuspension BIGINT NOT NULL,
-	fechaReanudacionContrato BIGINT NOT NULL,
-	plazoSuspension BIGINT NOT NULL,
-	tipoContrato VARCHAR(10) NOT NULL,
-	tipoModificacion VARCHAR(100) NOT NULL,
-	fechaModificacion BIGINT NOT NULL,
-	fechaNotificacion BIGINT NOT NULL,
-	fechaElaboracion BIGINT NOT NULL,
-	tipoAutorizacion VARCHAR(50) NOT NULL,
-	tipoDisminucion VARCHAR(8) NOT NULL
-	-- CONSTRAINT pk_,
-	CONSTRAINT fk_hechContrataciones_dimContratos FOREIGN KEY (contrato)
-		REFERENCES dimContratos(idContrato),
-	CONSTRAINT fk_hechContrataciones_dimProcedimientos FOREIGN KEY (procedimiento)
-		REFERENCES dimProcedimientos(idProcedimiento),
-	CONSTRAINT fk_hechContrataciones_dimTiempoIP FOREIGN KEY (fechaInicioProrroga)
-		REFERENCES dimTiempo(idTiempo),
-	CONSTRAINT fk_hechContrataciones_dimTiempoFP FOREIGN KEY (fechaFinalProrroga)
-		REFERENCES dimTiempo(idTiempo),
-	CONSTRAINT fk_hechContrataciones_dimTiempoIS FOREIGN KEY (fechaInicioSuspension)
-		REFERENCES dimTiempo(idTiempo),
-	CONSTRAINT fk_hechContrataciones_dimTiempoRC FOREIGN KEY (fechaReanudacionContrato)
-		REFERENCES dimTiempo(idTiempo),
-	CONSTRAINT fk_hechContrataciones_dimTiempoPS FOREIGN KEY (plazoSuspension)
-		REFERENCES dimTiempo(idTiempo),
-	CONSTRAINT fk_hechContrataciones_dimTiempoFM FOREIGN KEY (fechaModificacion)
-		REFERENCES dimTiempo(idTiempo),
-	CONSTRAINT fk_hechContrataciones_dimTiempoFN FOREIGN KEY (fechaNotificacion)
-		REFERENCES dimTiempo(idTiempo),
-	CONSTRAINT fk_hechContrataciones_dimTiempoFE FOREIGN KEY (fechaElaboracion)
-		REFERENCES dimTiempo(idTiempo)
-)
 ---- FINAL SCRIPT ---
