@@ -125,7 +125,6 @@ GO;
 				•	Causa Resultado
 				•	Estado del Recurso
 */
-
 CREATE PROCEDURE REP_Recursos
 AS
 BEGIN
@@ -149,6 +148,7 @@ BEGIN
 			ON procedimientos.institucion = instituciones.idInstitucion
 END;
 GO;
+
 /*REQ-42 PROVEEDORES ADJUDICADOS FINIQUITADO
   DESCRIPCIÓN: Presenta en detalle variables de los Proveedores adjudicados. 
 			   La información que se desea ver:
@@ -158,7 +158,7 @@ GO;
 					•	Monto adjudicado 
 					•	Nombre de la Institución
 */
-EXEC REP_ProveedoresAdjudicados
+
 CREATE PROCEDURE REP_ProveedoresAdjudicados
 	AS
 		BEGIN
@@ -374,25 +374,27 @@ CREATE PROCEDURE REP_ProveedoresSancionados
 		BEGIN
 			SELECT
 				  instituciones.nombreInstitucion as 'Nombre Institución'
-				, instituciones.cedulaInstitucion as 'Cédula Institución'
-				,proveedores.nombreProveedor as 'Nombre Proveedor'
+				, instituciones. cedulaInstitucion as 'Cédula Institución'
+				, proveedores.nombreProveedor as 'Nombre Proveedor'
 				, proveedores.cedulaProveedor as 'Cédula Proveedor'
-				, proveedores.tipoProveedor as 'Tipo de Proveedor'
-				,sanciones.tipoSancion as 'Tipo Sanción'
-				,tiempoInicio.fecha as 'Fecha Inicio Sanción'
-				,tiempoFinal.fecha as 'Fecha Final Sanción'
-				, sanciones.numeroResolucion as 'Número de Resolución'
-				, sanciones.estadoSancion as 'Estado Sanción'
+				, proveedores.tipoProveedor as 'Tipo Proveedor'
+				, proveedores.tamanoProveedor as 'Tipo de Empresa'
+				, sanciones.tipoSancion as 'Tipo de Sanción'
+				, tiempoInicio.fecha as 'Fecha de Inicio Sanción'
+				, tiempoVencimiento.fecha as 'Fecha de Vencimiento'
+				, sanciones.numeroResolucion as 'Número Resolución'
+				, sanciones.estadoSancion as 'Estado Resolución'
 			FROM
 				[dbo].[hechSanciones] sanciones
 				INNER JOIN [dbo].[dimInstituciones] instituciones
 					ON sanciones.institucion = instituciones.idInstitucion
 				INNER JOIN [dbo].[dimProveedores] proveedores
-					ON sanciones.proveedor= proveedores.idProveedor
+					ON sanciones.proveedor = proveedores.idProveedor
+				INNER JOIN [dbo].[dimTiempo] tiempoVencimiento
+					ON sanciones.fechaFinalSancion = tiempoVencimiento.idTiempo
 				INNER JOIN [dbo].[dimTiempo] tiempoInicio
-					ON sanciones.fechaInicioSancion= tiempoInicio.idTiempo
-				INNER JOIN [dbo].[dimTiempo] tiempoFinal
-					ON sanciones.fechaFinalSancion= tiempoInicio.idTiempo
+					ON sanciones.fechaInicioSancion = tiempoInicio.idTiempo
+
 END;
 GO;
 
