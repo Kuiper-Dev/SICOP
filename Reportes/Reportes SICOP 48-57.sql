@@ -190,7 +190,8 @@ GO
 				•	Moneda
 				•	Precio total del aumento/disminución
 */
-
+EXEC REP_Unilateral
+use [dw_sicop]
 CREATE PROCEDURE REP_Unilateral
 	AS
 		BEGIN
@@ -301,8 +302,7 @@ GO
 				• Precio total  
 				• Período de la prórroga
 */
-
-CREATE PROCEDURE REP_PRORROGAS
+CREATE PROCEDURE REP_Prorrogas
 	AS
 	BEGIN
 		SELECT
@@ -358,7 +358,6 @@ GO
 				• Número de reajuste
 				• Precio anterior último reajuste
 */
-
 CREATE PROCEDURE REP_Reajuste
 	AS
 	BEGIN
