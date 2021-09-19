@@ -52,5 +52,5 @@ jobs:
       with:
         app-name: 'sicop-rest-api'
         slot-name: 'production'
-        publish-profile: ${{ secrets.AzureAppService_PublishProfile_c9e7dcb1485e4d1ba4d9c38c1da8fc8d }}
+        publish-profile: ${{ secrets.AzureAppService_PublishProfile_95a106b9d2a8472a8003c110b7683392 }}
         package: .
