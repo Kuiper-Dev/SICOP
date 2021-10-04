@@ -57,27 +57,38 @@ CREATE PROCEDURE REP_InvitadosYOfertas
 				procedimientos.numeroProcedimiento as 'Número de Procedimiento'
 				,proveedores.nombreProveedor as 'NombreProveedor'
 				,proveedores.cedulaProveedor as 'Cédula Proveedor'
-				,tiempoPresentacion.fecha as 'Participó'
-				,tiempoPublicacion.fecha as 'Fecha Publicacion'
-				,tiempoApertura.fecha as 'Fecha Apertura'
-				,productos.codigoProducto as 'Código Producto'
-				,ofertas.cantidadOfertada as 'Cantidad de Unidades'
+				,(CASE 
+					WHEN invitaciones.proveedor IS NOT NULL
+						THEN 'SÍ'
+						ELSE 
+							'NO'
+						END) as 'Participó'
+				, tiempoPublicacion.fecha as 'Fecha Publicación'
+				, tiempoApertura.fecha as 'Fecha Apertura'
+				,(CASE
+					WHEN (invitaciones.proveedor = ofertas.proveedor) 
+							AND (ofertas.procedimiento = invitaciones.procedimiento)
+						THEN 
+							'SÍ'
+						ELSE
+							'NO'
+						END) as 'Oferto'
+				, productos.codigoProducto as 'Código Producto'
+
 			FROM
-				[dbo].[hechInvitaciones] invitaciones
-				INNER JOIN[dbo].[dimProcedimientos] procedimientos
-					ON invitaciones.procedimiento=procedimientos.idProcedimiento
-				INNER JOIN[dbo].[dimProveedores] proveedores
-					ON invitaciones.proveedor=proveedores.idProveedor
-				LEFT JOIN [dbo].[hechOfertas] ofertas
-					ON invitaciones.proveedor= ofertas.proveedor
-				LEFT JOIN [dbo].[dimTiempo] tiempoPresentacion
-					ON ofertas.fechaPresentacion=tiempoPresentacion.idTiempo
+				[dbo].[dimProveedores] proveedores 
+				LEFT JOIN [dbo].[hechInvitaciones] invitaciones
+					ON proveedores.idProveedor = invitaciones.proveedor
+				INNER JOIN [dbo].[dimProcedimientos] procedimientos
+					ON invitaciones.procedimiento = procedimientos.idProcedimiento 
 				INNER JOIN [dbo].[hechCarteles] carteles
-					ON invitaciones.procedimiento=carteles.procedimiento
-				INNER JOIN [dbo].[dimTiempo] tiempoPublicacion
-					ON carteles.fechaPublicacion=tiempoPublicacion.idTiempo
-				INNER JOIN [dbo].[dimTiempo] tiempoApertura
-					ON carteles.fechaApertura=tiempoApertura.idTiempo
+					ON invitaciones.procedimiento = carteles.procedimiento
+				INNER JOIN [dbo].[dimTiempo] tiempoPublicacion 
+					ON carteles.fechaPublicacion = tiempoPublicacion.idTiempo
+				INNER JOIN [dbo].[dimTiempo] tiempoApertura 
+					ON carteles.fechaApertura = tiempoApertura.idTiempo
+				LEFT JOIN [dbo].[hechOfertas] ofertas
+					ON invitaciones.procedimiento = ofertas.procedimiento
 				INNER JOIN [dbo].[dimProductos] productos
 					ON ofertas.producto = productos.idProducto
 		END;
