@@ -49,7 +49,7 @@ GO;
 				•	Código de producto.
 				•	Cantidad de unidades.
 */
-use [dw_sicop]
+
 EXEC REP_InvitadosYOfertas
 CREATE PROCEDURE REP_InvitadosYOfertas
 	AS
@@ -164,7 +164,7 @@ GO;
 						*	Cantidad de procedimientos adjudicados. 
 						*	Monto total adjudicado.
 */
-use [dw_sicop]
+
 CREATE PROCEDURE REP_InstitucionesSICOP
 	AS
 		BEGIN
@@ -241,13 +241,7 @@ GO;
 			     1- ubicación de los proveedores, 
 				 2- ubicación de instituciones compradoras.
 */
-select top 10* from [dbo].[hechContrataciones]
-select top 10* from [dbo].[hechOrdenesPedido]
-select top 10* from [dbo].[dimProveedores]
-select top 10* from [dbo].[hechContrataciones]
-select top 10* from [dbo].[dimContratos]
-select top 10* from [dbo].[dimProcedimientos]
-select top 10* from [dbo].[hechOfertas]
+
 CREATE PROCEDURE REP_ProveedoresYOrdenes
 	AS
 		BEGIN
@@ -279,8 +273,7 @@ CREATE PROCEDURE REP_ProveedoresYOrdenes
 					,T0.[Nombre Proveedor]
 		END;
 GO;
- SELECT count (proveedor) from [dbo].[hechSanciones] where proveedor = 40458
- SELECT count (proveedor) from [dbo].[hechInvitaciones]  where proveedor = 40458
+
 SELECT
 	proveedores.idProveedor
 	,count(contratos.idContrato)
