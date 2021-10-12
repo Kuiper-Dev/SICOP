@@ -15,6 +15,7 @@ CREATE PROCEDURE REP_FuncionariosInhibidos
 				   ,instituciones.nombreInstitucion as 'Institucioón donde Labora'
 				   ,tiempoFI.fecha as 'Fecha de Inicio de Inhibido'
 				   ,tiempoFS.fecha as 'Fecha de Fin de Inhibido'
+				   ,inhibiciones.estadoInhibicion as 'Estado en registro inhibido'
 			FROM
 				[dbo].[hechInhibicionesFuncionario] inhibiciones
 				INNER JOIN [dbo].[dimFuncionarios] funcionarios
@@ -25,6 +26,7 @@ CREATE PROCEDURE REP_FuncionariosInhibidos
 				ON inhibiciones.fechaInicioInhibicion = tiempoFI.idTiempo
 				INNER JOIN [dbo].[dimTiempo] tiempoFS
 				ON inhibiciones.fechaFinalInhibicion = tiempoFS.idTiempo
+				ORDER BY funcionarios.nombreFuncionario
 END;
 GO;
 

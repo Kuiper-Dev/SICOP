@@ -49,48 +49,55 @@ GO;
 				•	Código de producto.
 				•	Cantidad de unidades.
 */
+use [dw_sicop]
 EXEC REP_InvitadosYOfertas
 CREATE PROCEDURE REP_InvitadosYOfertas
 	AS
 		BEGIN
-			SELECT
-				procedimientos.numeroProcedimiento as 'Número de Procedimiento'
-				,proveedores.nombreProveedor as 'NombreProveedor'
-				,proveedores.cedulaProveedor as 'Cédula Proveedor'
-				,(CASE 
-					WHEN invitaciones.proveedor IS NOT NULL
-						THEN 'SÍ'
-						ELSE 
-							'NO'
-						END) as 'Participó'
-				, tiempoPublicacion.fecha as 'Fecha Publicación'
-				, tiempoApertura.fecha as 'Fecha Apertura'
-				,(CASE
-					WHEN (invitaciones.proveedor = ofertas.proveedor) 
-							AND (ofertas.procedimiento = invitaciones.procedimiento)
-						THEN 
-							'SÍ'
-						ELSE
-							'NO'
-						END) as 'Oferto'
-				, productos.codigoProducto as 'Código Producto'
+			SELECT distinct
+				procedimientos.numeroProcedimiento
+				,instituciones.nombreInstitucion
+				,proveedores.nombreProveedor
+				,proveedores.cedulaProveedor
+				,(CASE WHEN invitaciones.fechaInvitacion IS NOT NULL
+					THEN 
+						'SÍ'
+					ELSE 
+						'NO'
+							END) as '¿Participó?'
+				,publicación.fecha as 'Publicación del Cartel'
+				,apertura.fecha as 'Apertura del Cartel'
+				,(CASE WHEN ofertas.fechaPresentacion IS NOT NULL
+					THEN 
+						'SÍ'
+					ELSE 
+						'NO'
+							END) as '¿Ofertó?'
+				,productos.codigoProducto
+				,ofertas.cantidadOfertada as 'Cantidad de Unidades'
+
+				
 
 			FROM
-				[dbo].[dimProveedores] proveedores 
-				LEFT JOIN [dbo].[hechInvitaciones] invitaciones
-					ON proveedores.idProveedor = invitaciones.proveedor
+				[dbo].[hechInvitaciones] invitaciones
+				INNER JOIN [dbo].[dimInstituciones] instituciones
+					ON invitaciones.institucion = instituciones.idInstitucion
+				INNER JOIN [dbo].[dimProveedores] proveedores
+					ON invitaciones.proveedor = proveedores.idProveedor
 				INNER JOIN [dbo].[dimProcedimientos] procedimientos
-					ON invitaciones.procedimiento = procedimientos.idProcedimiento 
-				INNER JOIN [dbo].[hechCarteles] carteles
-					ON invitaciones.procedimiento = carteles.procedimiento
-				INNER JOIN [dbo].[dimTiempo] tiempoPublicacion 
-					ON carteles.fechaPublicacion = tiempoPublicacion.idTiempo
-				INNER JOIN [dbo].[dimTiempo] tiempoApertura 
-					ON carteles.fechaApertura = tiempoApertura.idTiempo
-				LEFT JOIN [dbo].[hechOfertas] ofertas
-					ON invitaciones.procedimiento = ofertas.procedimiento
+					ON invitaciones.procedimiento = procedimientos.idProcedimiento
+				INNER JOIN [dbo].[hechOfertas] ofertas
+					ON invitaciones.procedimiento = ofertas.procedimiento 
+						AND invitaciones.proveedor = ofertas.proveedor
 				INNER JOIN [dbo].[dimProductos] productos
-					ON ofertas.producto = productos.idProducto
+					ON ofertas.producto = productos.codigoProducto
+				INNER JOIN[dbo].[hechCarteles] carteles
+					ON invitaciones.procedimiento = carteles.procedimiento
+				INNER JOIN [dbo].[dimTiempo] apertura
+					ON carteles.fechaApertura = apertura.idTiempo
+				INNER JOIN [dbo].[dimTiempo] publicación
+					ON carteles.fechaPublicacion = publicación.idTiempo
+						
 		END;
 GO;
 
@@ -157,41 +164,39 @@ GO;
 						*	Cantidad de procedimientos adjudicados. 
 						*	Monto total adjudicado.
 */
-
-
+use [dw_sicop]
 CREATE PROCEDURE REP_InstitucionesSICOP
 	AS
 		BEGIN
 			SELECT
-				T0.nombreInstitucion as 'Nombre de la Institución'
-				,T0.fechaIngreso as 'Fecha de Ingreso'
-				, tiempoAdjudicacion.fecha as 'Fecha Primera Adjudicación'
-				,T0.[Total Procedimientos] as 'Total de Procedimientos'
-				,T0.[Procedimientos adjudicados] as 'Procedimientos Adjudicados'
-				, SUM(adjudicaciones.montoAdjudicadoLineaUSD) as 'Monto Total Adjudicado'
+				T0.nombreInstitucion 'Nombre Institución'
+				,T0.fechaIngreso as 'Fecha Ingreso SICOP'
+				,MIN(tiempoAdjudicacion.fecha) as 'Fecha Primera Adjudicación SICOP '
+				,T0.[Total Procedimientos] as 'Total Procedmientos'
+				,T0.[Procedimientos adjudicados] as 'Total Adjudicaciones'
+				,SUM(adjudicaciones.montoAdjudicadoLineaUSD) as 'Monto Total Adjudicado'
 
-			FROM
-				(SELECT
-				instituciones.idInstitucion
-				,instituciones.nombreInstitucion
-				,instituciones.fechaIngreso
-				,COUNT(procedimientos.idProcedimiento) as 'Total Procedimientos'
-				,SUM(CASE 
-							WHEN procedimientos.estadoProcedimiento like'Adjudicado'
+			FROM 
+				(
+					SELECT
+						instituciones.idInstitucion,instituciones.nombreInstitucion,instituciones.fechaIngreso
+						,COUNT(procedimientos.idProcedimiento) as 'Total Procedimientos'
+						,SUM(CASE WHEN procedimientos.estadoProcedimiento like'Adjudicado'
 								THEN 1 
 								ELSE 0 
-									END) as 'Procedimientos adjudicados'
-			FROM
-				[dbo].[dimProcedimientos]procedimientos
-				INNER JOIN [dbo].[dimInstituciones] instituciones
-					ON procedimientos.institucion= instituciones.idInstitucion
-	
-			GROUP BY instituciones.idInstitucion,instituciones.nombreInstitucion, instituciones.fechaIngreso) AS T0
-			INNER JOIN [dbo].[hechAdjudicaciones] adjudicaciones
-				ON T0.idInstitucion=adjudicaciones.institucion
-			INNER JOIN [dbo].[dimTiempo] tiempoAdjudicacion
-				ON adjudicaciones.fechaAdjudicacionFirme = tiempoAdjudicacion.idTiempo
-			GROUP BY T0.nombreInstitucion, T0.fechaIngreso, tiempoAdjudicacion.fecha, T0.[Total Procedimientos], T0.[Procedimientos adjudicados]
+							END) as 'Procedimientos adjudicados'
+					FROM
+					[dbo].[dimProcedimientos] procedimientos
+					INNER JOIN [dbo].[dimInstituciones] instituciones
+						ON procedimientos.institucion = instituciones.idInstitucion
+					GROUP BY instituciones.idInstitucion, instituciones.nombreInstitucion, instituciones.fechaIngreso
+				) AS T0
+				INNER JOIN [dbo].[hechAdjudicaciones] adjudicaciones
+					ON T0.idInstitucion = adjudicaciones.institucion
+				INNER JOIN [dbo].[dimTiempo] tiempoAdjudicacion
+					ON adjudicaciones.fechaAdjudicacionFirme = tiempoAdjudicacion.idTiempo
+				GROUP BY T0.nombreInstitucion, T0.fechaIngreso, T0.[Total Procedimientos], T0.[Procedimientos adjudicados]
+				ORDER BY T0.nombreInstitucion
 		END;
 GO;
 
@@ -236,25 +241,63 @@ GO;
 			     1- ubicación de los proveedores, 
 				 2- ubicación de instituciones compradoras.
 */
-
+select top 10* from [dbo].[hechContrataciones]
+select top 10* from [dbo].[hechOrdenesPedido]
+select top 10* from [dbo].[dimProveedores]
+select top 10* from [dbo].[hechContrataciones]
+select top 10* from [dbo].[dimContratos]
+select top 10* from [dbo].[dimProcedimientos]
+select top 10* from [dbo].[hechOfertas]
 CREATE PROCEDURE REP_ProveedoresYOrdenes
 	AS
 		BEGIN
-			SELECT 
-				 proveedores.nombreProveedor
-				,proveedores.provinciaProveedor
-				,proveedores.cantonProveedor
-				,proveedores.distritoProveedor
-				, instituciones.nombreInstitucion
-				,instituciones.provinciaInstitucion
-				,instituciones.cantonInstitucion
-				,instituciones.distritoInstitucion
+			SELECT
+				T0.idProveedor
+				,T0.[Tipo de Cédula]
+				,T0.[Cedula de Proveedor]
+				,T0.[Nombre Proveedor]
+				,count (contratos.idContrato) as 'Cantidad de Contratos'
+			
 			FROM
-				[dbo].[dimProveedores] proveedores,
-				[dbo].[dimInstituciones] instituciones
-				
+				(SELECT
+					proveedores.idProveedor
+					,proveedores.tipoProveedor as 'Tipo de Cédula'
+					,proveedores.cedulaProveedor as 'Cedula de Proveedor'
+					, proveedores.nombreProveedor as 'Nombre Proveedor'
+					, proveedores.tamanoProveedor as 'Tipo de Empresa'
+					, proveedores.provinciaProveedor as 'Provincia'
+					, proveedores.cantonProveedor as 'Canton'
+					, proveedores.fechaRegistro as 'Fecha Registro SICOP'
+				FROM
+					[dbo].[dimProveedores] proveedores) AS T0		
+					LEFT JOIN [dbo].[dimContratos] as contratos
+						ON T0.idProveedor = contratos.proveedor
+				GROUP BY
+					T0.idProveedor
+					,T0.[Tipo de Cédula]
+					,T0.[Cedula de Proveedor]
+					,T0.[Nombre Proveedor]
 		END;
 GO;
+ SELECT count (proveedor) from [dbo].[hechSanciones] where proveedor = 40458
+ SELECT count (proveedor) from [dbo].[hechInvitaciones]  where proveedor = 40458
+SELECT
+	proveedores.idProveedor
+	,count(contratos.idContrato)
+	,count(sanciones.proveedor)
+	,count(invitaciones.proveedor)
+	,count(ofertas.proveedor)
+FROM
+	[dbo].[dimProveedores] proveedores
+	LEFT JOIN [dbo].[dimContratos] contratos
+		ON proveedores.idProveedor = contratos.proveedor
+	LEFT JOIN [dbo].[hechSanciones] sanciones
+		ON proveedores.idProveedor = sanciones.proveedor
+	LEFT JOIN [dbo].[hechInvitaciones] invitaciones
+		ON proveedores.idProveedor= invitaciones.proveedor
+	LEFT  JOIN [dbo].[hechOfertas] ofertas
+		ON proveedores.idProveedor = ofertas.proveedor
+	GROUP BY proveedores.idProveedor
 /*REQ-37 REPORTES PROVEEDORES-CONTRATISTAS FINIQUITADO
   DESCRIPCION: Reporte que muestra los proveedores registrados en SICOP 
 			   y las instituciones públicas que compran bienes y servicios
@@ -292,5 +335,6 @@ BEGIN
 				, procedimientos.numeroProcedimiento
 				, procedimientos.descripcionProcedimiento
 				, procedimientos.estadoProcedimiento
+
 END;
 GO;
