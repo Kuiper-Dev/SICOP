@@ -373,7 +373,7 @@ SET fechaInicioProrroga = DTIP.idTiempo
 	,fechaReanudacionContrato = DTRC.idTiempo
 FROM hechContrataciones HC
 	INNER JOIN dimContratos DC ON HC.contrato = DC.idContrato
-	INNER JOIN OCPEO.ocpe_synapse_dw.SIC.Contratos CT ON DC.numeroContrato = CT.NRO_CONTRATO
+	INNER JOIN OCPE.ocpe_synapse_dw_copy.SIC.Contratos CT ON DC.numeroContrato = CT.NRO_CONTRATO
 		AND HC.secuencia = CT.SECUENCIA
 	INNER JOIN dimTiempo DTIP ON ISNULL(CT.FECHA_INI_PRORR,'0001-01-01') = DTIP.fecha
 	INNER JOIN dimTiempo DTFP ON ISNULL(CT.FECHA_FIN_PRORR,'0001-01-01') = DTFP.fecha
@@ -386,24 +386,41 @@ SET fechaModificacion = DTFM.idTiempo
 	,fechaElaboracion = DTFE.idTiempo
 FROM hechContrataciones HC
 	INNER JOIN dimContratos DC ON HC.contrato = DC.idContrato
-	INNER JOIN OCPEO.ocpe_synapse_dw.SIC.Contratos CT ON DC.numeroContrato = CT.NRO_CONTRATO
+	INNER JOIN OCPE.ocpe_synapse_dw_copy.SIC.Contratos CT ON DC.numeroContrato = CT.NRO_CONTRATO
 		AND HC.secuencia = CT.SECUENCIA
 	INNER JOIN dimTiempo DTFM ON ISNULL(CT.FECHA_MODIFICACION,'0001-01-01') = DTFM.fecha
 	INNER JOIN dimTiempo DTFN ON ISNULL(CT.FECHA_NOTIFICACION,'0001-01-01') = DTFN.fecha
 	INNER JOIN dimTiempo DTFE ON ISNULL(CT.FECHA_ELABORACION,'0001-01-01') = DTFE.fecha
 
 UPDATE hechContrataciones
-SET --producto = PR.idProducto
-	moneda = DM.idMoneda	
+SET producto = PR.idProducto
 FROM hechContrataciones HC
-	INNER JOIN dimContratos DC ON HC.contrato = DC.idContrato
-	INNER JOIN OCPEO.ocpe_synapse_dw.SIC.LineasContratadas LC ON DC.numeroContrato = LC.NRO_CONTRATO
+	INNER JOIN dimContratos DC ON DC.idContrato = HC.contrato
+	INNER JOIN OCPE.ocpe_synapse_dw_copy.SIC.LineasContratadas LC ON DC.numeroContrato = LC.NRO_CONTRATO
 		AND HC.secuencia = LC.SECUENCIA	
-	--INNER JOIN dimClasificacionProductos CL ON SUBSTRING(LC.CODIGO_PRODUCTO, 1, 16) = CONCAT(CL.codigoClasificacion,CL.codigoIdentificacion)
-	--INNER JOIN dimProductos PR ON CL.idClasificacionProducto = PR.clasificacionProducto
-	--	AND SUBSTRING(LC.CODIGO_PRODUCTO,17,8) = PR.codigoProducto
-	INNER JOIN dimMonedas DM ON LC.TIPO_MONEDA = DM.codigoISO
+		AND HC.numeroLineaContrato = LC.NRO_LINEA_CONTRATO
+	INNER JOIN dimClasificacionProductos CL ON SUBSTRING(LC.CODIGO_PRODUCTO, 1, 16) = CONCAT(CL.codigoClasificacion,CL.codigoIdentificacion)
+	INNER JOIN dimProductos PR ON CL.idClasificacionProducto = PR.clasificacionProducto
+		AND SUBSTRING(LC.CODIGO_PRODUCTO,17,8) = PR.codigoProducto
 
+-- carga alternativa (dura mucho combinando todo en una sola consulta ¿?)
+DECLARE @temp TABLE (contrato BIGINT, secuencia VARCHAR(3), numeroLineaContrato SMALLINT, moneda INTEGER)
+INSERT INTO @temp
+SELECT
+	DC.idContrato
+	,LC.SECUENCIA
+	,LC.NRO_LINEA_CONTRATO
+	,DM.idMoneda
+FROM OCPE.ocpe_synapse_dw_copy.SIC.LineasContratadas LC
+	INNER JOIN dimContratos DC ON LC.NRO_CONTRATO = DC.numeroContrato
+	INNER JOIN dimMonedas DM ON LC.TIPO_MONEDA = DM.codigoISO
+UPDATE hechContrataciones
+SET	moneda = temp.moneda
+FROM hechContrataciones HC
+	INNER JOIN @temp temp ON HC.contrato = temp.contrato
+		AND HC.secuencia = temp.secuencia
+		AND HC.numeroLineaContrato = temp.numeroLineaContrato	
+		
 
 INSERT INTO hechGarantias(procedimiento, fechaRegistro, proveedor, numeroGarantia,
 	cedulaGarante, secuenciaGarantia, tipoGarantia, monto, estado, vigencia)

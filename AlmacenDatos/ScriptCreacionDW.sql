@@ -495,7 +495,7 @@ CREATE TABLE hechSanciones(
 	codigoProducto VARCHAR(8) NOT NULL,
 	descripcionProducto VARCHAR(200) NOT NULL,
 	tipoSancion	VARCHAR(30) NOT NULL,
-	descripcionSancion VARCHAR(1000),
+	descripcionSancion VARCHAR(1000) NOT NULL,
 	estadoSancion VARCHAR(3) NOT NULL,
 	numeroResolucion VARCHAR(30) NOT NULL,
 	--CONSTRAINT pk_hechSanciones PRIMARY KEY (institucion, proveedor, fechaRegistro
@@ -518,7 +518,7 @@ CREATE TABLE hechInhibicionesFuncionario(
 	fechaRegistro BIGINT NOT NULL,
 	fechaInicioInhibicion BIGINT NOT NULL,
 	fechaFinalInhibicion BIGINT NOT NULL,		
-	estadoInhibicion VARCHAR(3) NOT NULL,	
+	estadoInhibicion VARCHAR(10) NOT NULL,	
 	--CONSTRAINT pk_hechSanciones PRIMARY KEY (institucion, funcionario, fechaRegistro
 		--fechaInicioInhibicion, fechaFinalInhibicion),	
 	CONSTRAINT fk_hechInhibicionesFuncionario_dimInstituciones FOREIGN KEY (institucion)

@@ -1,53 +1,195 @@
-/* REQ-28 TIPO DE PROCEDIMIENTOS SICOP FINIQUITADO
+Ôªø/* REQ-28 TIPO DE PROCEDIMIENTOS SICOP FINIQUITADO
    DESCRIPCION: Generar un reporte que detalle los distintos tipos de figuras 
-				contractuales que se realizan en SICOP. EntiÈndase por tipo de procedimiento: 
-				(esto debe mostrarse en la descripciÛn del reporte: 
-				ìEste es un reporte ejecutivo a nivel macro, sobre lasadjudicaciones en firmeî)
-						*	LN: LicitaciÛn Nacional P˙blica.
-						*	LI: LicitaciÛn Internacional.
-						*	LA: LicitaciÛn Abreviada.
+				contractuales que se realizan en SICOP. Enti√©ndase por tipo de procedimiento: 
+				(esto debe mostrarse en la descripci√≥n del reporte: 
+				‚ÄúEste es un reporte ejecutivo a nivel macro, sobre lasadjudicaciones en firme‚Äù)
+						*	LN: Licitaci√≥n Nacional P√∫blica.
+						*	LI: Licitaci√≥n Internacional.
+						*	LA: Licitaci√≥n Abreviada.
 						*	PP: Procedimiento por principio.
-						*	CD: ContrataciÛn Directa.
-						*	CE: ContrataciÛn Especial.
+						*	CD: Contrataci√≥n Directa.
+						*	CE: Contrataci√≥n Especial.
 						*	RE: Remate.
 */
 CREATE PROCEDURE REP_Procedimientos
-	AS
-		BEGIN
-			SELECT 	procedimiento.tipoProcedimiento as Procedimiento
-					, count(procedimiento.idProcedimiento) as Cantidad  
-			FROM [dbo].[dimProcedimientos] procedimiento 
-			WHERE procedimiento.estadoProcedimiento = 'AdjudicaciÛn en firme' 
-			GROUP BY procedimiento.tipoProcedimiento 
-		END;
-GO;
+AS
+BEGIN
+	SELECT
+		procedimientos.numeroProcedimiento AS "N√∫mero de procedimiento"
+		,procedimientos.tipoProcedimiento AS "Tipo de procedimiento"	
+		,monedas.codigoISO AS "Moneda"
+		,SUM(adjudicaciones.montoAdjudicadoLinea) AS "Monto adjudicado"
+		,SUM(adjudicaciones.montoAdjudicadoLineaUSD) AS "Monto adjudicado (equivalente en USD)"
+		,MAX(tiempo.fecha) AS "Fecha adjudicaci√≥n"
+	FROM [dbo].[hechAdjudicaciones] adjudicaciones
+		INNER JOIN [dbo].[dimProcedimientos] procedimientos
+			ON adjudicaciones.procedimiento = procedimientos.idProcedimiento
+		INNER JOIN [dbo].[dimMonedas] monedas
+			ON monedas.idMoneda = adjudicaciones.monedaAdjudicada	
+		INNER JOIN [dbo].[dimTiempo] tiempo
+			ON adjudicaciones.fechaAdjudicacionFirme = tiempo.idTiempo
+	WHERE procedimientos.estadoProcedimiento IN ('Contrato', 'Finiquitado', 'Adjudicaci√≥n en firme')
+	GROUP BY procedimientos.numeroProcedimiento, procedimientos.tipoProcedimiento,
+		procedimientos.descripcionProcedimiento, monedas.codigoISO						
+END
+GO
 
-/*REQ-29 COMPRAS POR INSTITUCION, PRODUCTOS, PRECIO A—O*/
+/*	REQ-29 COMPRAS POR INSTITUCION, PRODUCTOS, PRECIO A√ëO
+	DESCRIPCION: Generar un reporte que detalle las distintas compras por entidad p√∫blica que se realizan en SICOP.
+		La informaci√≥n que se presentar√° para este reporte ser√° la siguiente:
+			*	Nombre de la Instituci√≥n. 
+			*	N√∫mero de Procedimiento. 
+			*	Descripci√≥n por procedimiento. 
+			*	Moneda.
+			*	Monto reservado.
+			*	Monto del procedimiento (adjudicado).
+			*	Monto Contratado.
+			*	Regi√≥n (Distrito)
+*/
 CREATE PROCEDURE REP_ComprasInstitucion
-	AS
-		BEGIN
-		END;
-GO;
+AS
+BEGIN
+	SELECT
+		procedimiento
+		,moneda
+		,SUM(montoReservado) AS "totalReservado"
+		,SUM(montoReservado / tipoCambioUSD) "totalReservadoUSD"
+	INTO #montoReservado
+	FROM [dbo].[hechCarteles]
+	GROUP BY procedimiento, moneda
+	
+	SELECT
+		procedimiento
+		,monedaAdjudicada AS "moneda"
+		,SUM(montoAdjudicadoLinea) AS "totalAdjudicado"
+		,SUM(montoAdjudicadoLineaUSD) AS "totalAdjudicadoUSD"
+		,MAX(tiempo.fecha) AS "fechaUltimaAdjudicacion"
+	INTO #montoAdjudicado
+	FROM [dbo].[hechAdjudicaciones] adjudicaciones		
+		INNER JOIN dimTiempo tiempo
+			ON adjudicaciones.fechaAdjudicacionFirme = tiempo.idTiempo
+	GROUP BY procedimiento, monedaAdjudicada
 
-/*REQ-30 MERCANCIAS, SERVICIOS Y BIENES MAS COMPRADOS*/
+	SELECT
+		procedimiento
+		,moneda
+		,SUM(cantidadContratada * precioUnitario - descuento + IVA) AS "totalContratado"
+		,SUM((cantidadContratada * precioUnitario - descuento + IVA) / tipoCambioUSD) AS "totalContratadoUSD"
+	INTO #montoContratado
+	FROM [dbo].[hechContrataciones]		
+	-- deja por fuera las contrataciones que tienen tipo de cambio en 0 (NULL en el origen), para evitar una divisi√≥n por cero
+	-- pedir que introduzcan esa informaci√≥n o re-estructurar todo el almacen de datos para contemplar una dimensi√≥n tipo de cambio
+	WHERE tipoCambioUSD <> 0
+	GROUP BY procedimiento, moneda
+		
+	SELECT
+		instituciones.nombreInstitucion AS "Nombre de la instituci√≥n"
+		,instituciones.distritoInstitucion AS "Regi√≥n"
+		,procedimientos.numeroProcedimiento AS "N√∫mero del procedimiento"
+		,procedimientos.descripcionProcedimiento AS "Descripci√≥n del procedimiento"
+		,procedimientos.tipoProcedimiento AS "Tipo de procedimiento"
+		,monedas.descripcionMoneda AS "Moneda"		
+		,COALESCE(reservados.totalReservado, 0) AS "Monto reservado (moneda)"
+		,COALESCE(reservados.totalReservadoUSD, 0) AS "Monto reservado (equivalente en USD)"
+		,COALESCE(adjudicados.totalAdjudicado, 0) AS "Monto adjudicado (moneda)"
+		,COALESCE(adjudicados.totalAdjudicadoUSD, 0) AS "Monto adjudicado (equivalente en USD)"
+		,COALESCE(contratados.totalContratado, 0) AS "Monto contratado (moneda)"
+		,COALESCE(contratados.totalContratadoUSD, 0) AS "Monto contratado (equivalente en USD)"
+		,adjudicados.fechaUltimaAdjudicacion AS "Fecha de Adjudicaci√≥n"
+	FROM (
+			SELECT 
+				procedimiento
+				,moneda
+			FROM #montoReservado
+			UNION
+			SELECT 
+				procedimiento
+				,moneda
+			FROM #montoAdjudicado
+			UNION
+			SELECT 
+				procedimiento
+				,moneda
+			FROM #montoContratado
+		) AS procedimientoMoneda
+		LEFT JOIN #montoReservado reservados
+			ON procedimientoMoneda.procedimiento = reservados.procedimiento
+				AND procedimientoMoneda.moneda = reservados.moneda
+		LEFT JOIN #montoAdjudicado adjudicados
+			ON procedimientoMoneda.procedimiento = adjudicados.procedimiento
+				AND procedimientoMoneda.moneda = adjudicados.moneda
+		LEFT JOIN #montoContratado contratados
+			ON procedimientoMoneda.procedimiento = contratados.procedimiento
+				AND procedimientoMoneda.moneda = contratados.moneda
+		INNER JOIN [dbo].[dimProcedimientos] procedimientos
+			ON procedimientoMoneda.procedimiento = procedimientos.idProcedimiento
+		INNER JOIN [dbo].[dimInstituciones] instituciones
+			ON procedimientos.institucion = instituciones.idInstitucion
+		INNER JOIN [dbo].[dimMonedas] monedas
+			ON procedimientoMoneda.moneda = monedas.idMoneda
+END
+GO
+
+/*	REQ-30 MERCANCIAS, SERVICIOS Y BIENES MAS COMPRADOS
+	DESCRIPCION: Reporte con el detalle de compras de c√≥digos de identificaci√≥n y productos.
+		La informaci√≥n que se presentar√° para este reporte ser√° la siguiente:
+			*	C√≥digo de identificaci√≥n
+			*	C√≥digo de producto. 
+			*	Clasificaci√≥n presupuestaria. 
+			*	Cantidad
+			*	Monto
+			*	Moneda
+*/
 CREATE PROCEDURE REP_Mercancias
-	AS
-		BEGIN
-		END;
-GO;
+AS
+BEGIN
+	SELECT
+		instituciones.cedulaInstitucion AS "C√©dula de la instituci√≥n"
+		,instituciones.nombreInstitucion AS "Nombre de la instituci√≥n"
+		,clasificacionesProducto.codigoIdentificacion AS "C√≥digo de identificaci√≥n"
+		,CONCAT(clasificacionesProducto.codigoClasificacion, clasificacionesProducto.codigoIdentificacion,
+			productos.codigoProducto) AS "C√≥digo de producto"
+		,adjudicaciones.objetoGasto AS "Clasificaci√≥n presupuestaria"
+		,monedas.descripcionMoneda AS "Moneda"
+		,tiempo.fecha AS "Fecha Adjudicaci√≥n"			
+		,SUM(adjudicaciones.montoAdjudicadoLinea) AS "Monto"
+		,SUM(adjudicaciones.cantidadAdjudicada) AS "Cantidad"
+	FROM [dbo].[hechAdjudicaciones] adjudicaciones
+		INNER JOIN [dbo].[dimProcedimientos] procedimientos
+			ON adjudicaciones.procedimiento = procedimientos.idProcedimiento
+		INNER JOIN [dbo].[dimInstituciones] instituciones
+			ON adjudicaciones.institucion = instituciones.idInstitucion
+		INNER JOIN [dbo].[dimMonedas] monedas
+			ON adjudicaciones.monedaAdjudicada = monedas.idMoneda
+		INNER JOIN [dbo].[dimTiempo] tiempo
+			ON adjudicaciones.fechaAdjudicacionFirme =tiempo.idTiempo
+		INNER JOIN [dbo].[dimProductos] productos
+			ON adjudicaciones.producto = productos.idProducto
+		INNER JOIN [dbo].[dimClasificacionProductos] clasificacionesProducto
+			ON productos.clasificacionProducto = clasificacionesProducto.idClasificacionProducto
+		GROUP BY instituciones.cedulaInstitucion
+			,instituciones.nombreInstitucion
+			,clasificacionesProducto.codigoIdentificacion
+			,CONCAT(clasificacionesProducto.codigoClasificacion, clasificacionesProducto.codigoIdentificacion,
+				productos.codigoProducto)
+			,adjudicaciones.objetoGasto
+			,monedas.descripcionMoneda
+			,tiempo.fecha
+END
+GO
 
 /*REQ-31 Invitados y Ofertas por proceso FINIQUITADO
-  DESCRIPCI”N:Reporte donde muestra los proveedores que han sido invitados 
-              a cada licitaciÛn (proceso) realizada.
-				ï	N˙mero de procedimiento.
-				ï	Nombre del proveedor.
-				ï	Cedula del proveedor.
-				ï	Participo, SI   NO  .
-				ï	Fecha que se publica el cartel.
-				ï	Fecha y hora de la apertura.
-				ï	øOfertÛ?,  SI   NO  .
-				ï	CÛdigo de producto.
-				ï	Cantidad de unidades.
+  DESCRIPCI√ìN:Reporte donde muestra los proveedores que han sido invitados 
+              a cada licitaci√≥n (proceso) realizada.
+				‚Ä¢	N√∫mero de procedimiento.
+				‚Ä¢	Nombre del proveedor.
+				‚Ä¢	Cedula del proveedor.
+				‚Ä¢	Participo, SI   NO  .
+				‚Ä¢	Fecha que se publica el cartel.
+				‚Ä¢	Fecha y hora de la apertura.
+				‚Ä¢	¬øOfert√≥?,  SI   NO  .
+				‚Ä¢	C√≥digo de producto.
+				‚Ä¢	Cantidad de unidades.
 */
 
 EXEC REP_InvitadosYOfertas
@@ -61,18 +203,18 @@ CREATE PROCEDURE REP_InvitadosYOfertas
 				,proveedores.cedulaProveedor
 				,(CASE WHEN invitaciones.fechaInvitacion IS NOT NULL
 					THEN 
-						'SÕ'
+						'S√ç'
 					ELSE 
 						'NO'
-							END) as 'øParticipÛ?'
-				,publicaciÛn.fecha as 'PublicaciÛn del Cartel'
+							END) as '¬øParticip√≥?'
+				,publicaci√≥n.fecha as 'Publicaci√≥n del Cartel'
 				,apertura.fecha as 'Apertura del Cartel'
 				,(CASE WHEN ofertas.fechaPresentacion IS NOT NULL
 					THEN 
-						'SÕ'
+						'S√ç'
 					ELSE 
 						'NO'
-							END) as 'øOfertÛ?'
+							END) as '¬øOfert√≥?'
 				,productos.codigoProducto
 				,ofertas.cantidadOfertada as 'Cantidad de Unidades'
 
@@ -95,24 +237,24 @@ CREATE PROCEDURE REP_InvitadosYOfertas
 					ON invitaciones.procedimiento = carteles.procedimiento
 				INNER JOIN [dbo].[dimTiempo] apertura
 					ON carteles.fechaApertura = apertura.idTiempo
-				INNER JOIN [dbo].[dimTiempo] publicaciÛn
-					ON carteles.fechaPublicacion = publicaciÛn.idTiempo
+				INNER JOIN [dbo].[dimTiempo] publicaci√≥n
+					ON carteles.fechaPublicacion = publicaci√≥n.idTiempo
 						
 		END;
 GO;
 
 /*REQ-33 COMPARATIVO PRECIO DE UN PRODUCTO POR INSTITUCION FINIQUITADO
-  DESCRIPCION: Reporte que presenta los precios finales de los cÛdigos de producto adquiridos 
-               en diferentes procesos de contrataciÛn.
-				La informaciÛn a presentar es la siguiente:
-				ï	Instituciones.
-				ï	N˙meros de procedimiento.
-				ï	CÛdigo de producto.
-				ï	DescripciÛn del bien o servicio.
-				ï	Precios de producto.
-				ï	Fecha de adjudicaciÛn.
-				ï	Nombre Contratista.
-				ï	Cedula del contratista.
+  DESCRIPCION: Reporte que presenta los precios finales de los c√≥digos de producto adquiridos 
+               en diferentes procesos de contrataci√≥n.
+				La informaci√≥n a presentar es la siguiente:
+				‚Ä¢	Instituciones.
+				‚Ä¢	N√∫meros de procedimiento.
+				‚Ä¢	C√≥digo de producto.
+				‚Ä¢	Descripci√≥n del bien o servicio.
+				‚Ä¢	Precios de producto.
+				‚Ä¢	Fecha de adjudicaci√≥n.
+				‚Ä¢	Nombre Contratista.
+				‚Ä¢	Cedula del contratista.
 */
 
 CREATE PROCEDURE REP_ComparativaPrecioProducto
@@ -153,13 +295,13 @@ CREATE PROCEDURE REP_ComparativaPrecioProducto
 		END;
 GO;
 /*REQ-34 INSTITUCIONES QUE UTILIZAN SICOP FINIQUITADO
-  DESCRIPCI”N: Reporte que facilitar· el conocimiento de todas las instituciones que utilizan SICOP. 
+  DESCRIPCI√ìN: Reporte que facilitar√° el conocimiento de todas las instituciones que utilizan SICOP. 
 			   Poder visualizar las instituciones de Compradoras de Gobierno, 
-			   Central, Adscritas, desconcentradas o autÛnomas. 
-			   La informaciÛn que se desea ver:
-						*	Nombre de InstituciÛn.
+			   Central, Adscritas, desconcentradas o aut√≥nomas. 
+			   La informaci√≥n que se desea ver:
+						*	Nombre de Instituci√≥n.
 						*	Fecha de ingreso a SICOP.
-						*	Fecha de primera adjudicaciÛn en SICOP.
+						*	Fecha de primera adjudicaci√≥n en SICOP.
 						*	Cantidad de procedimientos en total.
 						*	Cantidad de procedimientos adjudicados. 
 						*	Monto total adjudicado.
@@ -169,9 +311,9 @@ CREATE PROCEDURE REP_InstitucionesSICOP
 	AS
 		BEGIN
 			SELECT
-				T0.nombreInstitucion 'Nombre InstituciÛn'
+				T0.nombreInstitucion 'Nombre Instituci√≥n'
 				,T0.fechaIngreso as 'Fecha Ingreso SICOP'
-				,MIN(tiempoAdjudicacion.fecha) as 'Fecha Primera AdjudicaciÛn SICOP '
+				,MIN(tiempoAdjudicacion.fecha) as 'Fecha Primera Adjudicaci√≥n SICOP '
 				,T0.[Total Procedimientos] as 'Total Procedmientos'
 				,T0.[Procedimientos adjudicados] as 'Total Adjudicaciones'
 				,SUM(adjudicaciones.montoAdjudicadoLineaUSD) as 'Monto Total Adjudicado'
@@ -202,14 +344,14 @@ GO;
 
 /*REQ-35 SANCIONES A PROVEEDORES
   DESCRIPCION:  Reporte que muestra las sanciones aplicadas a proveedores. 
-				A saber, los tipos de SanciÛn son Apercibimiento e InhabilitaciÛn. 
-				La informaciÛn que se desea ver:
-					ï	Cedula JurÌdica del Proveedor
-					ï	Nombre del Proveedor
-					ï	Tipo de SanciÛn
-					ï	DescripciÛn de la SanciÛn
-					ï	Vigencia de la SanciÛn
-					ï	Fecha final de SanciÛn
+				A saber, los tipos de Sanci√≥n son Apercibimiento e Inhabilitaci√≥n. 
+				La informaci√≥n que se desea ver:
+					‚Ä¢	Cedula Jur√≠dica del Proveedor
+					‚Ä¢	Nombre del Proveedor
+					‚Ä¢	Tipo de Sanci√≥n
+					‚Ä¢	Descripci√≥n de la Sanci√≥n
+					‚Ä¢	Vigencia de la Sanci√≥n
+					‚Ä¢	Fecha final de Sanci√≥n
 */
 CREATE PROCEDURE REP_SancionesProveedores
 	AS
@@ -231,15 +373,15 @@ CREATE PROCEDURE REP_SancionesProveedores
 			END;
 GO;
 /*REQ-36 REPORTES PROVEEDORES-CONTRATISTAS
-  DESCRIPCION:Reporte que muestra las Ûrdenes de compra de cada proveedor.
-			  Mostrar· informaciÛn de proveedores m·s frecuentes medidos por cantidad de Ûrdenes de compras
-			  y por monto econÛmico adjudicado
-			  Se requiere un mapa de Costa Rica en el dashboard que permita al dar clic en una zona geogr·fica especÌfica
-			  , abrir un cuadro de di·logo sobre informaciÛn de la instituciÛn o empresa
-			  , y a su vez que genere el reporte con la informaciÛn descrita a continuaciÛn.
+  DESCRIPCION:Reporte que muestra las √≥rdenes de compra de cada proveedor.
+			  Mostrar√° informaci√≥n de proveedores m√°s frecuentes medidos por cantidad de √≥rdenes de compras
+			  y por monto econ√≥mico adjudicado
+			  Se requiere un mapa de Costa Rica en el dashboard que permita al dar clic en una zona geogr√°fica espec√≠fica
+			  , abrir un cuadro de di√°logo sobre informaci√≥n de la instituci√≥n o empresa
+			  , y a su vez que genere el reporte con la informaci√≥n descrita a continuaci√≥n.
 			  El mapa debe detallar
-			     1- ubicaciÛn de los proveedores, 
-				 2- ubicaciÛn de instituciones compradoras.
+			     1- ubicaci√≥n de los proveedores, 
+				 2- ubicaci√≥n de instituciones compradoras.
 */
 
 CREATE PROCEDURE REP_ProveedoresYOrdenes
@@ -247,7 +389,7 @@ CREATE PROCEDURE REP_ProveedoresYOrdenes
 		BEGIN
 			SELECT
 				T0.idProveedor
-				,T0.[Tipo de CÈdula]
+				,T0.[Tipo de C√©dula]
 				,T0.[Cedula de Proveedor]
 				,T0.[Nombre Proveedor]
 				,count (contratos.idContrato) as 'Cantidad de Contratos'
@@ -255,7 +397,7 @@ CREATE PROCEDURE REP_ProveedoresYOrdenes
 			FROM
 				(SELECT
 					proveedores.idProveedor
-					,proveedores.tipoProveedor as 'Tipo de CÈdula'
+					,proveedores.tipoProveedor as 'Tipo de C√©dula'
 					,proveedores.cedulaProveedor as 'Cedula de Proveedor'
 					, proveedores.nombreProveedor as 'Nombre Proveedor'
 					, proveedores.tamanoProveedor as 'Tipo de Empresa'
@@ -268,7 +410,7 @@ CREATE PROCEDURE REP_ProveedoresYOrdenes
 						ON T0.idProveedor = contratos.proveedor
 				GROUP BY
 					T0.idProveedor
-					,T0.[Tipo de CÈdula]
+					,T0.[Tipo de C√©dula]
 					,T0.[Cedula de Proveedor]
 					,T0.[Nombre Proveedor]
 		END;
@@ -293,25 +435,25 @@ FROM
 	GROUP BY proveedores.idProveedor
 /*REQ-37 REPORTES PROVEEDORES-CONTRATISTAS FINIQUITADO
   DESCRIPCION: Reporte que muestra los proveedores registrados en SICOP 
-			   y las instituciones p˙blicas que compran bienes y servicios
-			   La informaciÛn que se desea ver:
-					ï Nombre del Proveedor
-					ï CÈdula del Proveedor
-					ï Nombre de InstituciÛn
-					ï N˙mero de Procedimiento
-					ï DescripciÛn del Procedimiento
-					ï Monto Adjudicado
-					ï Estado del Concurso/Procedimiento
+			   y las instituciones p√∫blicas que compran bienes y servicios
+			   La informaci√≥n que se desea ver:
+					‚Ä¢ Nombre del Proveedor
+					‚Ä¢ C√©dula del Proveedor
+					‚Ä¢ Nombre de Instituci√≥n
+					‚Ä¢ N√∫mero de Procedimiento
+					‚Ä¢ Descripci√≥n del Procedimiento
+					‚Ä¢ Monto Adjudicado
+					‚Ä¢ Estado del Concurso/Procedimiento
 */
 CREATE PROCEDURE REP_Proveedores
 AS
 BEGIN
 	SELECT
 		proveedores.nombreProveedor as 'Nombre Proveedor'
-		,proveedores.cedulaProveedor as 'CÈdula Proveedor'
-		, instituciones.nombreInstitucion as 'Nombre InstituciÛn'
-		, procedimientos.numeroProcedimiento as 'Nu˙mero de Procedimiento'
-		, procedimientos.descripcionProcedimiento as 'DescripciÛn del Procedimiento'
+		,proveedores.cedulaProveedor as 'C√©dula Proveedor'
+		, instituciones.nombreInstitucion as 'Nombre Instituci√≥n'
+		, procedimientos.numeroProcedimiento as 'Nu√∫mero de Procedimiento'
+		, procedimientos.descripcionProcedimiento as 'Descripci√≥n del Procedimiento'
 		, SUM(adjudicaciones.montoAdjudicadoLinea) as 'Monto Adjudicado'
 		, procedimientos.estadoProcedimiento as 'Estado del Procedimiento'
 	FROM

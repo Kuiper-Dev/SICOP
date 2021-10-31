@@ -64,6 +64,8 @@ BEGIN
 		,productos.descripcionProducto AS "Descripción del producto"
 		,procedimientos.codigoBPIP AS "Identificador del mapa de inversión (BPIP)"
 		,tiempo.fecha AS "Fecha solicitud contratacion"
+		,CONCAT('Costa Rica, ', instituciones.provinciaInstitucion, ', ' , instituciones.cantonInstitucion,
+			', ', instituciones.distritoInstitucion) AS "Ubicación de la institución"			
 	FROM [dbo].[hechAdjudicaciones] adjudicaciones
 		INNER JOIN [dbo].[dimProcedimientos] procedimientos
 			ON adjudicaciones.procedimiento = procedimientos.idProcedimiento
@@ -78,21 +80,6 @@ BEGIN
 		INNER JOIN [dbo].[dimTiempo] tiempo
 			ON adjudicaciones.fechaSolicitudContratacion = tiempo.idTiempo
 	WHERE procedimientos.codigoBPIP NOT LIKE 'N/A'
-END
-GO
-
--- Procedimiento auxiliar a los reportes 60 y 61
-CREATE PROCEDURE FechasAdjudicaciones
-AS
-BEGIN
-	SELECT 
-		adjudicaciones.procedimiento
-		,adjudicaciones.proveedor
-		,tiempo.fecha
-	FROM [dbo].[hechAdjudicaciones] adjudicaciones
-		INNER JOIN [dbo].[dimTiempo] tiempo
-			ON adjudicaciones.fechaAdjudicacionFirme = tiempo.idTiempo
-	GROUP BY procedimiento, proveedor, tiempo.fecha
 END
 GO
 
@@ -112,11 +99,7 @@ GO
 */
 CREATE PROCEDURE REP_GarantiasParticipacion
 AS
-BEGIN
-	DECLARE @fechasAdjudicaciones TABLE (procedimiento BIGINT, proveedor BIGINT, fechaAdjudicacion DATE)
-	INSERT INTO @fechasAdjudicaciones
-	EXEC FechasAdjudicaciones
-
+BEGIN	
 	SELECT
 		procedimientos.numeroProcedimiento AS "Número de procedimiento"
 		,procedimientos.tipoProcedimiento AS "Tipo de procedimiento"
@@ -139,7 +122,16 @@ BEGIN
 			ON garantias.vigencia = tiempoV.idTiempo
 		INNER JOIN [dbo].[dimTiempo] tiempoR
 			ON garantias.fechaRegistro = tiempoR.idTiempo
-		INNER JOIN @fechasAdjudicaciones fechasAdjudicaciones
+		INNER JOIN (
+			SELECT 
+				adjudicaciones.procedimiento AS "procedimiento"
+				,adjudicaciones.proveedor AS "proveedor"
+				,tiempo.fecha AS "fechaAdjudicacion"
+			FROM [dbo].[hechAdjudicaciones] adjudicaciones
+				INNER JOIN [dbo].[dimTiempo] tiempo
+					ON adjudicaciones.fechaAdjudicacionFirme = tiempo.idTiempo
+			GROUP BY procedimiento, proveedor, tiempo.fecha			
+		) fechasAdjudicaciones
 			ON garantias.procedimiento = fechasAdjudicaciones.procedimiento
 				AND garantias.proveedor = fechasAdjudicaciones.proveedor
 	-- la fecha de registro de la garantía es previa a la fecha de la adjudicacion en firme
@@ -164,10 +156,6 @@ GO
 CREATE PROCEDURE REP_GarantiasCumplimiento
 AS
 BEGIN
-	DECLARE @fechasAdjudicaciones TABLE (procedimiento BIGINT, proveedor BIGINT, fechaAdjudicacion DATE)
-	INSERT INTO @fechasAdjudicaciones
-	EXEC FechasAdjudicaciones
-
 	SELECT
 		procedimientos.numeroProcedimiento AS "Número de procedimiento"
 		,procedimientos.tipoProcedimiento AS "Tipo de procedimiento"
@@ -190,7 +178,16 @@ BEGIN
 			ON garantias.vigencia = tiempoV.idTiempo
 		INNER JOIN [dbo].[dimTiempo] tiempoR
 			ON garantias.fechaRegistro = tiempoR.idTiempo
-		INNER JOIN @fechasAdjudicaciones fechasAdjudicaciones
+		INNER JOIN (
+			SELECT 
+				adjudicaciones.procedimiento AS "procedimiento"
+				,adjudicaciones.proveedor AS "proveedor"
+				,tiempo.fecha AS "fechaAdjudicacion"
+			FROM [dbo].[hechAdjudicaciones] adjudicaciones
+				INNER JOIN [dbo].[dimTiempo] tiempo
+					ON adjudicaciones.fechaAdjudicacionFirme = tiempo.idTiempo
+			GROUP BY procedimiento, proveedor, tiempo.fecha			
+		) fechasAdjudicaciones
 			ON garantias.procedimiento = fechasAdjudicaciones.procedimiento
 				AND garantias.proveedor = fechasAdjudicaciones.proveedor
 	-- la fecha de registro de la garantía es posterior a la fecha de la adjudicacion en firme
@@ -214,7 +211,7 @@ GO
 			*	Porcentaje de Evaluación
 			*	Fecha de publicación del cartel		   
 */
-ALTER PROCEDURE REP_SistemaEvaluacion
+CREATE PROCEDURE REP_SistemaEvaluacion
 AS
 BEGIN
 	SELECT TOP 20000 -- remover este top
