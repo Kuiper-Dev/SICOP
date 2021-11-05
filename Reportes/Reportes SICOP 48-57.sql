@@ -1,27 +1,27 @@
-/*REQ-48 SUBASTAS FALTA NUMERO DE CARTEL
-  DESCRIPCION: Presenta detalle de las subastas. La información que se desea desplegar es la siguiente:
-•	Cédula de la institución que realizó la subasta a la baja.
-•	Nombre de la Institución que realizó la subasta a la baja.
-•	Número de procedimiento.
-•	Número de cartel.
-•	Tipo de procedimiento.
-•	Modalidad: subasta a la baja.
-•	Fecha de apertura (dd/mm/aaaa).
-•	Fecha de invitación (dd/mm/aaaa).
-•	Partida.
-•	Línea.*/
+ï»¿/*REQ-48 SUBASTAS FALTA NUMERO DE CARTEL
+  DESCRIPCION: Presenta detalle de las subastas. La informaciÃ³n que se desea desplegar es la siguiente:
+â€¢	CÃ©dula de la instituciÃ³n que realizÃ³ la subasta a la baja.
+â€¢	Nombre de la InstituciÃ³n que realizÃ³ la subasta a la baja.
+â€¢	NÃºmero de procedimiento.
+â€¢	NÃºmero de cartel.
+â€¢	Tipo de procedimiento.
+â€¢	Modalidad: subasta a la baja.
+â€¢	Fecha de apertura (dd/mm/aaaa).
+â€¢	Fecha de invitaciÃ³n (dd/mm/aaaa).
+â€¢	Partida.
+â€¢	LÃ­nea.*/
 CREATE PROCEDURE REP_Subastas
 	AS
 		BEGIN
 			SELECT
-				instituciones.nombreInstitucion as 'Nombre Institución'
-				, instituciones.cedulaInstitucion as 'Cédula Institución'
-				, procedimientos.numeroProcedimiento as 'Número Procedimiento'
+				instituciones.nombreInstitucion as 'Nombre InstituciÃ³n'
+				, instituciones.cedulaInstitucion as 'CÃ©dula InstituciÃ³n'
+				, procedimientos.numeroProcedimiento as 'NÃºmero Procedimiento'
 				,  procedimientos.modalidadProcedimiento as 'Modalidad'
 				, tiempoApertura.fecha as 'Fecha Apertura'
-				, tiempoInvitacion.fecha as 'Fecha Invitación'
+				, tiempoInvitacion.fecha as 'Fecha InvitaciÃ³n'
 				,carteles.numeroPartida as 'Partida'
-				, carteles.numeroLinea as 'Línea'
+				, carteles.numeroLinea as 'LÃ­nea'
 			FROM
 				[dbo].[hechRemates] remates
 				INNER JOIN[dbo].[dimProcedimientos] procedimientos
@@ -39,50 +39,50 @@ GO
 
 /*REQ-49 CONVENIO MARCO
   DESCRIPCION: Presenta detalle de las variables del convenio marco. 
-               La información que se desea desplegar es la siguiente:
-				• Cédula de institución que elabora el convenio marco.
-				• Nombre de la institución que elabora el convenio marco.
-				• Número de procedimiento.
-				• Nombre/descripción del convenio marco (Objeto contractual),
-				• Año.
-				• Fecha de contrato (dd/mm/aaaa).
-				• Vigencia de contrato.
-				• Número de contrato.
-				• Cédula de institución participa.
-				• Nombre de institución participa.
-				• Número de orden de pedido.
-				• Línea de orden de pedido.
-				• Código del producto
+               La informaciÃ³n que se desea desplegar es la siguiente:
+				â€¢ CÃ©dula de instituciÃ³n que elabora el convenio marco.
+				â€¢ Nombre de la instituciÃ³n que elabora el convenio marco.
+				â€¢ NÃºmero de procedimiento.
+				â€¢ Nombre/descripciÃ³n del convenio marco (Objeto contractual),
+				â€¢ AÃ±o.
+				â€¢ Fecha de contrato (dd/mm/aaaa).
+				â€¢ Vigencia de contrato.
+				â€¢ NÃºmero de contrato.
+				â€¢ CÃ©dula de instituciÃ³n participa.
+				â€¢ Nombre de instituciÃ³n participa.
+				â€¢ NÃºmero de orden de pedido.
+				â€¢ LÃ­nea de orden de pedido.
+				â€¢ CÃ³digo del producto
 */
 
 /*REQ-50 REMATES
   DESCRIPCION: 
-Presenta detalle de las variables de procedimientos de remate. La información que se desea desplegar es la siguiente:
+Presenta detalle de las variables de procedimientos de remate. La informaciÃ³n que se desea desplegar es la siguiente:
  
-•	Cédula de la institución que realizó el remate. 
-•	Nombre de la Institución que realizó el remate. 
-•	Número de procedimiento.
-•	Número de cartel.
-•	Tipo de procedimiento.
-•	Modalidad: remate.
-•	Fecha de apertura (dd/mm/aaaa).
-•	Fecha de invitación (dd/mm/aaaa).
-•	Partida.
-•	Línea.*/
+â€¢	CÃ©dula de la instituciÃ³n que realizÃ³ el remate. 
+â€¢	Nombre de la InstituciÃ³n que realizÃ³ el remate. 
+â€¢	NÃºmero de procedimiento.
+â€¢	NÃºmero de cartel.
+â€¢	Tipo de procedimiento.
+â€¢	Modalidad: remate.
+â€¢	Fecha de apertura (dd/mm/aaaa).
+â€¢	Fecha de invitaciÃ³n (dd/mm/aaaa).
+â€¢	Partida.
+â€¢	LÃ­nea.*/
 
 CREATE PROCEDURE REP_Remates
 	AS
 		BEGIN
 			SELECT
-				instituciones.nombreInstitucion as 'Nombre Institución'
-				, instituciones.cedulaInstitucion as 'Cédula Institución'
-				, procedimientos.numeroProcedimiento as 'Número Procedimiento'
+				instituciones.nombreInstitucion as 'Nombre InstituciÃ³n'
+				, instituciones.cedulaInstitucion as 'CÃ©dula InstituciÃ³n'
+				, procedimientos.numeroProcedimiento as 'NÃºmero Procedimiento'
 				,procedimientos.tipoProcedimiento as 'Tipo de Procedimiento'
 				,  procedimientos.modalidadProcedimiento as 'Modalidad'
 				, tiempoApertura.fecha as 'Fecha Apertura'
-				, tiempoInvitacion.fecha as 'Fecha Invitación'
+				, tiempoInvitacion.fecha as 'Fecha InvitaciÃ³n'
 				,carteles.numeroPartida as 'Partida'
-				, carteles.numeroLinea as 'Línea'
+				, carteles.numeroLinea as 'LÃ­nea'
 			FROM
 				[dbo].[hechRemates] remates
 				INNER JOIN[dbo].[dimProcedimientos] procedimientos
@@ -100,55 +100,55 @@ GO
 
 /*REQ-51 GIRO COMERCIAL DEL CONTRATISTA
   DESCRIPCION:Presenta el detalle de los contratistas que han sido adjudicado
-           para dar un servicio o bien u obra, corresponda al giro comercial al cual está registrado.
-La información que se desea ver:
-•	Nombre de proveedor
-•	Cédula proveedor.
-•	Giro de Negocio (o tipo de negocio con el que se registró como proveedor).
-•	Descripción del Procedimiento
-•	Descripción del objeto contractual adjudicado
-•	Código de Identificación adjudicado
-•	Subpartida
-•	Tipo de moneda
-•	Monto adjudicado 
-•	Nombre de la Institución*/
+           para dar un servicio o bien u obra, corresponda al giro comercial al cual estÃ¡ registrado.
+La informaciÃ³n que se desea ver:
+â€¢	Nombre de proveedor
+â€¢	CÃ©dula proveedor.
+â€¢	Giro de Negocio (o tipo de negocio con el que se registrÃ³ como proveedor).
+â€¢	DescripciÃ³n del Procedimiento
+â€¢	DescripciÃ³n del objeto contractual adjudicado
+â€¢	CÃ³digo de IdentificaciÃ³n adjudicado
+â€¢	Subpartida
+â€¢	Tipo de moneda
+â€¢	Monto adjudicado 
+â€¢	Nombre de la InstituciÃ³n*/
 
 /*REQ-52 SUSPENSION DE CONTRATOS
-  DESCRIPCION:Este reporte detalla los contratos que ha sido objeto de suspensión por parte de las instituciones.
-La información que se desea ver:
+  DESCRIPCION:Este reporte detalla los contratos que ha sido objeto de suspensiÃ³n por parte de las instituciones.
+La informaciÃ³n que se desea ver:
  
-•	Número de procedimiento
-•	Nombre y cédula institución
-•	Nombre y cédula contratista
-•	Código producto
-•	Descripción del producto
-•	Número de contrato
-•	Línea
-•	Cantidad
-•	Moneda
-•	Precio total 
-•	Fecha que inicia la suspensión
-•	Plazo de suspensión
-•	Fecha de reinicio del contrato*/
+â€¢	NÃºmero de procedimiento
+â€¢	Nombre y cÃ©dula instituciÃ³n
+â€¢	Nombre y cÃ©dula contratista
+â€¢	CÃ³digo producto
+â€¢	DescripciÃ³n del producto
+â€¢	NÃºmero de contrato
+â€¢	LÃ­nea
+â€¢	Cantidad
+â€¢	Moneda
+â€¢	Precio total 
+â€¢	Fecha que inicia la suspensiÃ³n
+â€¢	Plazo de suspensiÃ³n
+â€¢	Fecha de reinicio del contrato*/
 CREATE PROCEDURE REP_SuspensionContrato
 	AS
 		BEGIN
 			SELECT
-				procedimientos.numeroProcedimiento as 'Número de Procedimiento'
-				,instituciones.nombreInstitucion as 'Nombre Institución'
-				, instituciones.cedulaInstitucion as 'Cédula Institución'
+				procedimientos.numeroProcedimiento as 'NÃºmero de Procedimiento'
+				,instituciones.nombreInstitucion as 'Nombre InstituciÃ³n'
+				, instituciones.cedulaInstitucion as 'CÃ©dula InstituciÃ³n'
 				, proveedores.nombreProveedor as 'Nombre Contratista'
-				, proveedores.cedulaProveedor as 'Cédula Contratista'
-				, productos.codigoProducto as 'Código Producto'
-				, productos.descripcionProducto as 'Descripción Producto'
+				, proveedores.cedulaProveedor as 'CÃ©dula Contratista'
+				, productos.codigoProducto as 'CÃ³digo Producto'
+				, productos.descripcionProducto as 'DescripciÃ³n Producto'
 				, contratos.numeroContrato as 'Numero Contrato'
-				, contrataciones.numeroLineaCartel as 'Línea'
+				, contrataciones.numeroLineaCartel as 'LÃ­nea'
 				,contrataciones.cantidadContratada as 'Cantidad'
 				, monedas.codigoISO as 'Moneda'
 				, contrataciones.precioUnitario* contrataciones.cantidadContratada as 'Precio Total'
-				, tiempoInicio.fecha as 'Fecha Inicio Suspensión Contrato'
-				, contrataciones.plazoSuspension as 'Plazo Suspensión'
-				, tiempoReanudacion.fecha 'Fecha Reanudación Contrato'
+				, tiempoInicio.fecha as 'Fecha Inicio SuspensiÃ³n Contrato'
+				, contrataciones.plazoSuspension as 'Plazo SuspensiÃ³n'
+				, tiempoReanudacion.fecha 'Fecha ReanudaciÃ³n Contrato'
 
 			FROM
 				[dbo].[hechContrataciones] contrataciones
@@ -174,21 +174,21 @@ GO
   DESCRIPCION:Este reporte detalla las cantidades en unidades y monto de los bienes
               y servicios que se aumentan y disminuyen amparados a la figura 
 			  del contrato unilateral.
-				La información que se desea ver:
-				•	Número de procedimiento
-				•	Nombre y cédula institución
-				•	Nombre y cédula contratista
-				•	Código producto
-				•	Descripción del producto
-				•	Número de contrato
-				•	Línea
-				•	Cantidad contrato base
-				•	Moneda
-				•	Precio total contrato base
-				•	Tipo de modificación (Nota: corresponde si es aumento o disminución)
-				•	Cantidad aumentada/disminuida
-				•	Moneda
-				•	Precio total del aumento/disminución
+				La informaciÃ³n que se desea ver:
+				â€¢	NÃºmero de procedimiento
+				â€¢	Nombre y cÃ©dula instituciÃ³n
+				â€¢	Nombre y cÃ©dula contratista
+				â€¢	CÃ³digo producto
+				â€¢	DescripciÃ³n del producto
+				â€¢	NÃºmero de contrato
+				â€¢	LÃ­nea
+				â€¢	Cantidad contrato base
+				â€¢	Moneda
+				â€¢	Precio total contrato base
+				â€¢	Tipo de modificaciÃ³n (Nota: corresponde si es aumento o disminuciÃ³n)
+				â€¢	Cantidad aumentada/disminuida
+				â€¢	Moneda
+				â€¢	Precio total del aumento/disminuciÃ³n
 */
 EXEC REP_Unilateral
 use [dw_sicop]
@@ -196,19 +196,19 @@ CREATE PROCEDURE REP_Unilateral
 	AS
 		BEGIN
 			SELECT
-				procedimientos.numeroProcedimiento as 'Número de Procedimiento'
-				,instituciones.nombreInstitucion as 'Nombre Institución'
-				, instituciones.cedulaInstitucion as 'Cédula Institución'
+				procedimientos.numeroProcedimiento as 'NÃºmero de Procedimiento'
+				,instituciones.nombreInstitucion as 'Nombre InstituciÃ³n'
+				, instituciones.cedulaInstitucion as 'CÃ©dula InstituciÃ³n'
 				, proveedores.nombreProveedor as 'Nombre Contratista'
-				, proveedores.cedulaProveedor as 'Cédula Contratista'
-				, productos.codigoProducto as 'Código Producto'
-				, productos.descripcionProducto as 'Descripción Producto'
+				, proveedores.cedulaProveedor as 'CÃ©dula Contratista'
+				, productos.codigoProducto as 'CÃ³digo Producto'
+				, productos.descripcionProducto as 'DescripciÃ³n Producto'
 				, contratos.numeroContrato as 'Numero Contrato'
-				, contrataciones.numeroLineaCartel as 'Línea'
+				, contrataciones.numeroLineaCartel as 'LÃ­nea'
 				,contrataciones.cantidadContratada as 'Cantidad'
 				, monedas.codigoISO as 'Moneda'
 				, contrataciones.precioUnitario* contrataciones.cantidadContratada as 'Precio Total Contrato Base'
-				, contrataciones.tipoModificacion as 'Tipo de Modificación'
+				, contrataciones.tipoModificacion as 'Tipo de ModificaciÃ³n'
 				, contrataciones.cantidadAumentada as 'Cantidad'
 				, monedas.codigoISO as 'Moneda'
 				, contrataciones.precioUnitario* contrataciones.cantidadAumentada as 'Monto Total Aumento'
@@ -226,46 +226,46 @@ CREATE PROCEDURE REP_Unilateral
 					ON contrataciones.contrato = contratos.idContrato
 				INNER JOIN [dbo].[dimMonedas] monedas
 					ON contrataciones.moneda =monedas.idMoneda
-				WHERE contrataciones.tipoModificacion like'Modificación unilateral del contrato (Aumento)'
-					or contrataciones.tipoModificacion like'Modificación unilateral del contrato (Disminución)'
+				WHERE contrataciones.tipoModificacion like'ModificaciÃ³n unilateral del contrato (Aumento)'
+					or contrataciones.tipoModificacion like'ModificaciÃ³n unilateral del contrato (DisminuciÃ³n)'
 		END;
 GO
 /*REQ-54 CONTRATO ADICIONAL
   DESCRIPCION:Este reporte detalla las cantidades en unidades y monto de los bienes 
               y servicios que se adquieren amparados a la figura del contrato adicional.
-              La información que se desea ver:
-				•	Número de procedimiento
-				•	Nombre y cédula institución
-				•	Nombre y cédula contratista
-				•	Código producto
-				•	Descripción del producto
-				•	Número de contrato
-				•	Línea
-				•	Cantidad contrato base
-				•	Moneda
-				•	Precio total contrato base
-				•	Tipo de modificación 
-				•	Cantidad aumentada
-				•	Moneda
-				•	Precio total del aumento
+              La informaciÃ³n que se desea ver:
+				â€¢	NÃºmero de procedimiento
+				â€¢	Nombre y cÃ©dula instituciÃ³n
+				â€¢	Nombre y cÃ©dula contratista
+				â€¢	CÃ³digo producto
+				â€¢	DescripciÃ³n del producto
+				â€¢	NÃºmero de contrato
+				â€¢	LÃ­nea
+				â€¢	Cantidad contrato base
+				â€¢	Moneda
+				â€¢	Precio total contrato base
+				â€¢	Tipo de modificaciÃ³n 
+				â€¢	Cantidad aumentada
+				â€¢	Moneda
+				â€¢	Precio total del aumento
 */
 CREATE PROCEDURE REP_ContratoAdicional
 	AS
 		BEGIN
 			SELECT
-				procedimientos.numeroProcedimiento as 'Número de Procedimiento'
-				,instituciones.nombreInstitucion as 'Nombre Institución'
-				, instituciones.cedulaInstitucion as 'Cédula Institución'
+				procedimientos.numeroProcedimiento as 'NÃºmero de Procedimiento'
+				,instituciones.nombreInstitucion as 'Nombre InstituciÃ³n'
+				, instituciones.cedulaInstitucion as 'CÃ©dula InstituciÃ³n'
 				, proveedores.nombreProveedor as 'Nombre Contratista'
-				, proveedores.cedulaProveedor as 'Cédula Contratista'
-				, productos.codigoProducto as 'Código Producto'
-				, productos.descripcionProducto as 'Descripción Producto'
+				, proveedores.cedulaProveedor as 'CÃ©dula Contratista'
+				, productos.codigoProducto as 'CÃ³digo Producto'
+				, productos.descripcionProducto as 'DescripciÃ³n Producto'
 				, contratos.numeroContrato as 'Numero Contrato'
-				, contrataciones.numeroLineaCartel as 'Línea'
+				, contrataciones.numeroLineaCartel as 'LÃ­nea'
 				,contrataciones.cantidadContratada as 'Cantidad'
 				, monedas.codigoISO as 'Moneda'
 				, contrataciones.precioUnitario* contrataciones.cantidadContratada as 'Precio Total Contrato Base'
-				, contrataciones.tipoModificacion as 'Tipo de Modificación'
+				, contrataciones.tipoModificacion as 'Tipo de ModificaciÃ³n'
 				, contrataciones.cantidadAumentada as 'Cantidad Aumentada'
 				, monedas.codigoISO as 'Moneda'
 				, contrataciones.precioUnitario* contrataciones.cantidadAumentada as 'Monto Total Aumento'
@@ -288,38 +288,38 @@ CREATE PROCEDURE REP_ContratoAdicional
 GO
 /*REQ-55 PRORROGAS
   DESCRIPCION:El fin de este reporte es conocer cuales contratos se han prorrogado 
-              y su respectivo período.
-				La información que se desea ver:
-				• Número de procedimiento
-				• Nombre y cédula institución
-				• Nombre y cédula contratista
-				• Código producto
-				• Descripción del producto
-				• Número de contrato
-				• Línea
-				• Cantidad  
-				• Moneda
-				• Precio total  
-				• Período de la prórroga
+              y su respectivo perÃ­odo.
+				La informaciÃ³n que se desea ver:
+				â€¢ NÃºmero de procedimiento
+				â€¢ Nombre y cÃ©dula instituciÃ³n
+				â€¢ Nombre y cÃ©dula contratista
+				â€¢ CÃ³digo producto
+				â€¢ DescripciÃ³n del producto
+				â€¢ NÃºmero de contrato
+				â€¢ LÃ­nea
+				â€¢ Cantidad  
+				â€¢ Moneda
+				â€¢ Precio total  
+				â€¢ PerÃ­odo de la prÃ³rroga
 */
 CREATE PROCEDURE REP_Prorrogas
 	AS
 	BEGIN
 		SELECT
-			procedimientos.numeroProcedimiento as 'Número de Procedimiento'
-			,instituciones.nombreInstitucion as 'Nombre Institución'
-			, instituciones.cedulaInstitucion as 'Cédula Institución'
+			procedimientos.numeroProcedimiento as 'NÃºmero de Procedimiento'
+			,instituciones.nombreInstitucion as 'Nombre InstituciÃ³n'
+			, instituciones.cedulaInstitucion as 'CÃ©dula InstituciÃ³n'
 			, proveedores.nombreProveedor as 'Nombre Contratista'
-			, proveedores.cedulaProveedor as 'Cédula Contratista'
-			, productos.codigoProducto as 'Código Producto'
-			, productos.descripcionProducto as 'Descripción Producto'
+			, proveedores.cedulaProveedor as 'CÃ©dula Contratista'
+			, productos.codigoProducto as 'CÃ³digo Producto'
+			, productos.descripcionProducto as 'DescripciÃ³n Producto'
 			, contratos.numeroContrato as 'Numero Contrato'
-			, contrataciones.numeroLineaCartel as 'Línea'
+			, contrataciones.numeroLineaCartel as 'LÃ­nea'
 			,contrataciones.cantidadContratada as 'Cantidad'
 			, monedas.codigoISO as 'Moneda'
 			, contrataciones.precioUnitario* contrataciones.cantidadContratada as 'Precio Total'
-			, tiempoInicio.fecha as 'Fecha Inicio Prórroga'
-			, tiempoFinal.fecha as 'Fecha Final Prórroga'
+			, tiempoInicio.fecha as 'Fecha Inicio PrÃ³rroga'
+			, tiempoFinal.fecha as 'Fecha Final PrÃ³rroga'
 			
 		FROM
 			[dbo].[hechContrataciones] contrataciones
@@ -344,38 +344,57 @@ GO
 
 /*REQ-56 REAJUSTE DE PRECIOS DE CONTRATOS
   DESCRIPCION:Con este reporte se desea observar los reajustes de precios 
-              que se aplican a las líneas de un contrato y su respectivo monto.
-				La información que se desea ver:
-				• Número de procedimiento
-				• Nombre y cédula institución
-				• Nombre y cédula contratista
-				• Código producto
-				• Descripción del producto
-				• Número de contrato
-				• Línea
-				• Cantidad  
-				• Precio adjudicado 
-				• Número de reajuste
-				• Precio anterior último reajuste
+              que se aplican a las lÃ­neas de un contrato y su respectivo monto.
+				La informaciÃ³n que se desea ver:
+				â€¢ NÃºmero de procedimiento
+				â€¢ Nombre y cÃ©dula instituciÃ³n
+				â€¢ Nombre y cÃ©dula contratista
+				â€¢ CÃ³digo producto
+				â€¢ DescripciÃ³n del producto
+				â€¢ NÃºmero de contrato
+				â€¢ LÃ­nea
+				â€¢ Cantidad  
+				â€¢ Precio adjudicado 
+				â€¢ NÃºmero de reajuste
+				â€¢ Precio anterior Ãºltimo reajuste
+				â€¢ Monto del Reajuste
+				â€¢ Nuevo precio
+				â€¢ % de incremento del Ãºltimo reajuste
+				â€¢ Fecha de inicio
+				â€¢ Fecha de fin
+				â€¢ Meses a aplicar
+				â€¢ DÃ­as a aplicar
+				â€¢ Moneda
+				â€¢ Monto total (Nota: corresponde al Monto 
+				  total de periodo por nÃºmero de reajuste)
 */
 CREATE PROCEDURE REP_Reajuste
 	AS
 	BEGIN
 		SELECT
-			procedimientos.numeroProcedimiento as 'Número de Procedimiento'
-			,instituciones.nombreInstitucion as 'Nombre Institución'
-			, instituciones.cedulaInstitucion as 'Cédula Institución'
-			, proveedores.nombreProveedor as 'Nombre Contratista'
-			, proveedores.cedulaProveedor as 'Cédula Contratista'
-			, productos.codigoProducto as 'Código Producto'
-			, productos.descripcionProducto as 'Descripción Producto'
-			, contratos.numeroContrato as 'Numero Contrato'
-			, reajuste.numeroLineaContrato as 'Línea'
-			, reajuste.cantidadContratada as 'Cantidad'
-			, adjudicaciones.montoAdjudicadoLinea as 'Precio Adjudicado'
-			, reajuste.numeroReajuste as 'Número Reajuste'
-			, reajuste.precioAnteriorUltimoReajuste as 'Precio Anterior Último Reajuste'
-			
+			procedimientos.numeroProcedimiento AS "NÃºmero de Procedimiento"
+			, instituciones.nombreInstitucion AS "Nombre InstituciÃ³n"
+			, instituciones.cedulaInstitucion AS "CÃ©dula InstituciÃ³n"
+			, proveedores.nombreProveedor AS "Nombre Contratista"
+			, proveedores.cedulaProveedor AS "CÃ©dula Contratista"
+			, CONCAT(clasificacionesProducto.codigoClasificacion,clasificacionesProducto.codigoIdentificacion,
+				productos.codigoProducto) AS "CÃ³digo del Producto"
+			, productos.descripcionProducto AS "DescripciÃ³n del Producto"
+			, contratos.numeroContrato AS "NÃºmero de Contrato"
+			, reajuste.numeroLineaContrato AS "LÃ­nea"
+			, reajuste.cantidadContratada AS "Cantidad"
+			, reajuste.precioUnitario AS "Precio Adjudicado"
+			, reajuste.numeroReajuste AS "NÃºmero de reajuste"
+			, reajuste.precioAnteriorUltimoReajuste AS "Precio anterior del Ãºltimo reajuste"
+			, reajuste.montoReajuste AS "Monto del reajuste"
+			, reajuste.nuevoPrecio AS "Nuevo precio"
+			, reajuste.porcentajeIncrementoUltimoReajuste AS "% de incremento del Ãºltimo reajuste"
+			, tiempoInicio.fecha AS "Fecha de Inicio"
+			, tiempoFin.fecha AS "Fecha Final"
+			, reajuste.mesesAAplicar AS "Meses a aplicar"
+			, reajuste.diasAAplicar AS "DÃ­as a aplicar"
+			, monedas.codigoISO AS "Moneda"
+			, reajuste.montoTotal AS "Monto Total"
 		FROM
 			[dbo].[hechReajustesPrecio] reajuste
 			INNER JOIN [dbo].[dimProcedimientos] procedimientos
@@ -386,75 +405,87 @@ CREATE PROCEDURE REP_Reajuste
 				ON procedimientos.institucion = instituciones.idInstitucion
 			INNER JOIN [dbo].[dimProductos] productos
 				ON reajuste.producto = productos.idProducto
+			INNER JOIN [dbo].[dimClasificacionProductos] clasificacionesProducto
+				ON productos.clasificacionProducto = clasificacionesProducto.idClasificacionProducto						
 			INNER JOIN [dbo].[dimContratos] contratos
 				ON reajuste.contrato = contratos.idContrato
-			INNER JOIN [dbo].[hechAdjudicaciones] adjudicaciones
-				ON reajuste.procedimiento = adjudicaciones.procedimiento 
-					AND reajuste.numeroLineaContrato =adjudicaciones.numeroLinea
-	END;
+			INNER JOIN [dbo].[dimTiempo] tiempoInicio
+				ON reajuste.fechaInicio = tiempoInicio.idTiempo
+			INNER JOIN [dbo].[dimTiempo] tiempoFin
+				ON reajuste.fechaFin = tiempoFin.idTiempo
+			INNER JOIN [dbo].[dimMonedas] monedas
+				ON reajuste.moneda = monedas.idMoneda
+END;
 GO
 
-/*REQ-57 RECPECION DEL BIEN O SERVICIO
-  DESCRIPCION: Este reporte detalla la información de las actas de recepción definitiva
+/*REQ-57 RECEPCION DEL BIEN O SERVICIO
+  DESCRIPCION: Este reporte detalla la informaciÃ³n de las actas de recepciÃ³n definitiva
                de cada entrega de un contrato u orden de pedido.
-			   La información que se desea ver:
-				• Número de procedimiento
-				• Nombre y cédula institución
-				• Nombre y cédula contratista
-				• Contrato/Orden de pedido
-				• Número del acta de recepción definitiva
-				• Línea
-				• Código producto
-				• Descripción del producto
-				• Moneda
-				• Monto total de línea
-				• Cantidad solicitada
-				• Cantidad entregada
-				• Fecha de entrega solicitada (Nota: esta fecha corresponde a la fecha de entrega inicial)
-				• Fecha de entrega real
-				• Cantidad de días adelanto /atraso
+			   La informaciÃ³n que se desea ver:
+				â€¢ NÃºmero de procedimiento
+				â€¢ Nombre y cÃ©dula instituciÃ³n
+				â€¢ Nombre y cÃ©dula contratista
+				â€¢ Contrato/Orden de pedido
+				â€¢ NÃºmero del acta de recepciÃ³n definitiva
+				â€¢ LÃ­nea
+				â€¢ CÃ³digo producto
+				â€¢ DescripciÃ³n del producto
+				â€¢ Moneda
+				â€¢ Monto total de lÃ­nea
+				â€¢ Cantidad solicitada
+				â€¢ Cantidad entregada
+				â€¢ Fecha de entrega solicitada (Nota: esta fecha corresponde a la fecha de entrega inicial)
+				â€¢ Fecha de entrega real
+				â€¢ Cantidad de dÃ­as adelanto /atraso
 */
 CREATE PROCEDURE REP_RECEPCIONES
 	AS
 		BEGIN
 			SELECT
-			   procedimientos.numeroProcedimiento as 'Número de Procedimiento'
-			 , instituciones.nombreInstitucion as 'Nombre Institucion'
-			 , instituciones.cedulaInstitucion as 'Cédula Institución'
-			 , proveedores.nombreProveedor as 'Nombre Contratista'
-			 , proveedores.cedulaProveedor as 'Cédula Contratista'
-			 , contratos.numeroContrato as 'Numero Contrato'
-			 , recepciones.numeroRecepcionDefinitiva as 'Número Recepcion Definitiva'
-			 , recepciones.numeroLinea as 'Línea'
-			 , productos.codigoProducto as ' Código Producto'
-			 , productos.descripcionProducto as 'Descripcion Producto'
-			 , monedas.codigoISO as 'Moneda'
-			 , recepciones.precio*recepciones.cantidadRealRecibida as 'Monto Total de Línea'
-			 , recepciones.cantidadRealRecibida as 'Cantidad Entregada'
-			 , tiempoInicial.fecha as 'Fecha de Entrega Solicitada'
-			 , tiempoEntrega.fecha as 'Fecha de Entrega Real'
-			 , recepciones.diasAdelantoAtraso as ' Días Adelanto/ Atraso'
+			   procedimientos.numeroProcedimiento as "NÃºmero de Procedimiento"
+			 , instituciones.nombreInstitucion as "Nombre Institucion"
+			 , instituciones.cedulaInstitucion as "CÃ©dula InstituciÃ³n"
+			 , proveedores.nombreProveedor as "Nombre Contratista"
+			 , proveedores.cedulaProveedor as "CÃ©dula Contratista"
+			 , contratos.numeroContrato as "NÃºmero de Contrato/Orden pedido"
+			 , recepciones.numeroRecepcionDefinitiva as "NÃºmero del acta de recepcion definitiva"
+			 , recepciones.numeroLinea as "LÃ­nea"
+			 , CONCAT(clasificacionesProducto.codigoClasificacion,clasificacionesProducto.codigoIdentificacion,
+				productos.codigoProducto) as "CÃ³digo del Producto"
+			 , productos.descripcionProducto as "DescripciÃ³n del Producto"
+			 , monedas.codigoISO as "Moneda"
+			 , recepciones.precio*recepciones.cantidadRealRecibida as "Monto total de lÃ­nea"
+			 , carteles.cantidadSolicitada AS "Cantidad solicitada"
+			 , recepciones.cantidadRealRecibida as "Cantidad entregada"
+			 , tiempoInicial.fecha as "Fecha de entrega solicitada"
+			 , tiempoEntrega.fecha as "Fecha de entrega real"
+			 , recepciones.diasAdelantoAtraso as "DÃ­as de adelanto/atraso"
 			FROM
 				[dbo].[hechRecepciones] recepciones
 				INNER JOIN[dbo].[dimContratos] contratos
 					ON recepciones.contrato = contratos.idContrato
-
 				INNER JOIN [dbo].[dimInstituciones] instituciones
 					ON contratos.institucion = instituciones.idInstitucion
 				INNER JOIN [dbo].[dimProveedores] proveedores
 					ON contratos.proveedor = proveedores.idProveedor
 				INNER JOIN [dbo].[dimProcedimientos] procedimientos
-					ON contratos.procedimiento = procedimientos.idProcedimiento
-
+					ON contratos.procedimiento = procedimientos.idProcedimiento				
 				INNER JOIN [dbo].[dimProductos] productos
 					ON recepciones.producto = productos.idProducto
+				INNER JOIN [dbo].[dimClasificacionProductos] clasificacionesProducto
+					ON productos.clasificacionProducto = clasificacionesProducto.idClasificacionProducto
+				INNER JOIN [dbo].[hechContrataciones] contrataciones -- usado como intermediario para llegar a carteles
+					ON recepciones.contrato = contrataciones.contrato
+						AND recepciones.secuencia = contrataciones.secuencia
+						AND recepciones.numeroLinea = contrataciones.numeroLineaContrato						
+				INNER JOIN [dbo].[hechCarteles] carteles
+					ON contrataciones.procedimiento = carteles.procedimiento
+						AND contrataciones.numeroLineaCartel = carteles.numeroLinea					
 				INNER JOIN [dbo].[dimMonedas] monedas
 					ON recepciones.moneda = monedas.idMoneda
 				INNER JOIN [dbo].[dimTiempo] tiempoInicial
 					ON recepciones.fechaEntregaInicial = tiempoInicial.idTiempo
 				INNER JOIN [dbo].[dimTiempo] tiempoEntrega
-					ON recepciones.fechaRecepcionDefinitiva = tiempoEntrega.idTiempo
-
+					ON recepciones.fechaRecepcionDefinitiva = tiempoEntrega.idTiempo				
 END;
 GO
-
