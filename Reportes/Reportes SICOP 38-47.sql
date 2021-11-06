@@ -48,27 +48,28 @@ GO;
 CREATE PROCEDURE REP_DetallesCartel
 	AS
 		BEGIN
-			SELECT	  instituciones.nombreInstitucion as 'Nombre de la institucion'
-					, instituciones.cedulaInstitucion as 'Cédula Institución'
-					, tiempo.fecha as 'Fecha de Publicación'
-					, procedimientos.numeroProcedimiento as 'Numero Procedimiento'
-					, procedimientos.tipoProcedimiento as 'Tipo Procedimiento'
-					, procedimientos.modalidadProcedimiento as 'Modalidad Procedimiento'
-					, clasificacion.descripcionClasificacion as 'Clasificación del Objeto'
-					, carteles.montoReservado as 'Monto'
-					, procedimientos.estadoProcedimiento as 'Estado Cartel'
-					, procedimientos.codigoExcepcion as 'Código de la Excepción'
-					, procedimientos.descripcionExcepcion 'Descripción de la Excepcion'
+			SELECT
+				 instituciones.nombreInstitucion as 'Nombre Institución'
+				,instituciones.cedulaInstitucion as 'Cédula Institución'
+				,tiempoPublicacion.fecha as 'Fecha de Publicacion'
+				,procedimientos.numeroProcedimiento as 'Número de Procedimiento'
+				,procedimientos.tipoProcedimiento as 'Tipo Procedimiento'
+				,procedimientos.modalidadProcedimiento as 'Modalidad Procedimiento'
+				,clasificacion.descripcionClasificacion as 'Descripcion Clasificacion'
+				,carteles.montoReservado as 'Monto'
+				,procedimientos.estadoProcedimiento 'Estado Cartel'
+				,procedimientos.codigoExcepcion as 'Código Excepción'
+				,procedimientos.descripcionExcepcion 'Descripción de la Excepcion'
 			FROM
-				[dbo].[hechCarteles] carteles 
-				LEFT JOIN [dbo].[dimInstituciones] instituciones
-					ON carteles.institucion = instituciones.idInstitucion
-				LEFT JOIN [dbo].[dimTiempo] tiempo
-					ON carteles.fechaPublicacion = tiempo.idTiempo 
-				LEFT JOIN [dbo].[dimProcedimientos] procedimientos
+				[dbo].[hechCarteles] carteles
+				INNER JOIN [dbo].[dimTiempo] tiempoPublicacion
+					ON carteles.fechaPublicacion = tiempoPublicacion.idTiempo
+				INNER JOIN [dbo].[dimProcedimientos] procedimientos
 					ON carteles.procedimiento = procedimientos.idProcedimiento
-				LEFT JOIN [dbo].[dimClasificacionProductos] clasificacion
+				INNER JOIN [dbo].[dimClasificacionProductos] clasificacion
 					ON carteles.clasificacionProducto = clasificacion.idClasificacionProducto
+				INNER JOIN [dbo].[dimInstituciones] instituciones
+					ON procedimientos.institucion = instituciones.idInstitucion
 			END;
 GO;
 
@@ -85,28 +86,35 @@ GO;
 			•	Cantidad Solicitada.
 			•	Precio unitario estimado.
 */
+
 CREATE PROCEDURE REP_DetalleLineas
 	AS
 		BEGIN
 			SELECT
-				procedimientos.numeroProcedimiento as 'Número de Procedimiento'
+				procedimientos.NumeroProcedimiento as 'Numero de Procedimiento'
 				,instituciones.nombreInstitucion as 'Nombre Institución Compradora'
 				,instituciones.cedulaInstitucion as 'Cédula Institución Compradora'
-				,carteles.numeroPartida as 'Numero de Partida'
+				,procedimientos.numeroProcedimiento as 'Número de Procedimiento'
+				,carteles.numeroPartida as'Número de Partida'
 				,carteles.numeroLinea as 'Número de Línea'
-				, CONCAT(clasificacionProductos.codigoClasificacion, clasificacionProductos.codigoIdentificacion) as 'Código de Identificación'
-				,clasificacionProductos.descripcionClasificacion as 'Descripción de la Línea'
+				,CONCAT(clasificacion.codigoClasificacion, clasificacion.codigoIdentificacion) as 'Código de Identificación'
+				,clasificacion.descripcionClasificacion as 'Descripción de la Línea'
 				,carteles.cantidadSolicitada as 'Cantidad Solicitada'
-				,carteles.precioUnitarioEstimado as 'Precio Unitario Estimado'
-				
+				,carteles.PrecioUnitarioEstimado as 'Precio Unitario Estimado'
+				,COALESCE(ofertas.cantidadOfertada,0) as 'Cantidad de Ofertas'
+				,monedas.codigoISO as 'Tipo de Moneda'
 			FROM
 				[dbo].[hechCarteles] carteles
-				LEFT JOIN[dbo].[dimClasificacionProductos] clasificacionProductos
-					ON carteles.clasificacionProducto = clasificacionProductos.idClasificacionProducto
-				LEFT JOIN [dbo].[dimInstituciones] instituciones
-					ON carteles.institucion = instituciones.idInstitucion
-				LEFT JOIN [dbo].[dimProcedimientos] procedimientos
+				INNER JOIN [dbo].[dimProcedimientos] procedimientos
 					ON carteles.procedimiento = procedimientos.idProcedimiento
+				INNER JOIN [dbo].[dimInstituciones] instituciones
+					ON procedimientos.institucion = instituciones.idInstitucion
+				INNER JOIN [dbo].[dimClasificacionProductos] clasificacion
+					ON carteles.clasificacionProducto = clasificacion.idClasificacionProducto
+				LEFT JOIN [dbo].[hechOfertas] ofertas
+					ON carteles.procedimiento = ofertas.procedimiento
+				INNER JOIN [dbo].[dimMonedas] monedas
+					ON carteles.moneda = monedas.idMoneda
 		END;
 GO;
 
@@ -127,6 +135,7 @@ GO;
 				•	Causa Resultado
 				•	Estado del Recurso
 */
+
 CREATE PROCEDURE REP_Recursos
 AS
 BEGIN
@@ -136,7 +145,11 @@ BEGIN
 		,instituciones.cedulaInstitucion as 'Cedula Institución'
 		,objeciones.numeroRecurso as 'Número de Recurso'
 		,objeciones.tipoRecurso as 'Tipo de Recurso'
-		,objeciones.numeroActo as 'Número de Acto'
+		,tiemporesentacion.fecha as 'Fecha Presentación'
+		,(CASE WHEN objeciones.tipoRecurso like  'Objeción'
+				THEN procedimientos.nroSICOP
+				ELSE 'Pendiente' end) as 'Númerode Acto'
+		
 		,objeciones.lineaObjetada as 'Línea Objetada'
 		,objeciones.nombreRecurrente as 'Nombre Recurrente'
 		,objeciones.resultado as 'Resultado'
@@ -148,6 +161,8 @@ BEGIN
 			ON objeciones.procedimiento = procedimientos.idProcedimiento
 		INNER JOIN [dbo].[dimInstituciones] instituciones
 			ON procedimientos.institucion = instituciones.idInstitucion
+		INNER JOIN [dbo].[dimTiempo] tiemporesentacion
+			ON objeciones.fechaPresentacion = tiemporesentacion.idTiempo
 END;
 GO;
 
@@ -160,15 +175,15 @@ GO;
 					•	Monto adjudicado 
 					•	Nombre de la Institución
 */
-
 CREATE PROCEDURE REP_ProveedoresAdjudicados
 	AS
 		BEGIN
 			SELECT
-					proveedores.nombreProveedor as 'Nombre del Proveedor'
+					  proveedores.nombreProveedor as 'Nombre del Proveedor'
 					, proveedores.cedulaProveedor as 'Cédula del Proveedor'
-					,monedas.descripcionMoneda as 'Moneda'
-					,adjudicaciones.montoAdjudicadoLinea as 'Monto Adjudicado'
+					, tiempoAdjudicacion.fecha as 'Fecha Adjudicación'
+					, monedas.codigoISO as 'Moneda'
+					, adjudicaciones.montoAdjudicadoLinea as 'Monto Adjudicado'
 					, instituciones.nombreInstitucion as 'Nombre de la Insitución'
 			FROM
 					[dbo].[hechAdjudicaciones] adjudicaciones
@@ -178,6 +193,8 @@ CREATE PROCEDURE REP_ProveedoresAdjudicados
 						ON adjudicaciones.monedaAdjudicada = monedas.idMoneda
 					INNER JOIN [dbo].[dimInstituciones] instituciones
 						ON adjudicaciones.institucion = instituciones.idInstitucion 
+					INNER JOIN [dbo].[dimTiempo] tiempoAdjudicacion
+						ON adjudicaciones.fechaAdjudicacionFirme = tiempoAdjudicacion.idTiempo
 		END;
 GO;
 
@@ -217,11 +234,12 @@ CREATE PROCEDURE REP_LineasAdjudicadas
 				, adjudicaciones.numeroLinea as 'Número de Línea'
 				, adjudicaciones.cantidadAdjudicada as 'Cantidad Adjudicada'
 				, adjudicaciones.precioUnitarioAdjudicado as 'Precio Unitario Adjudicado'
-				, adjudicaciones.monedaAdjudicada as 'Moneda'
+				, monedas.codigoISO as ' Tipo de Moneda'
 				, adjudicaciones.descuento as 'Descuento'
 				, adjudicaciones.IVA as 'IVA'
-				, adjudicaciones.acarreo as 'Acarreos'
 				, adjudicaciones.otroImpuesto as 'Otros impuestos'
+				, adjudicaciones.acarreo as 'Acarreos'
+				, (adjudicaciones.acarreo*0.13) as 'IVA Acarreos'
 				, tiempoAdjudicacion.fecha as 'Fecha Adjudicación en Firme'
 				, adjudicaciones.permiteRecursos as 'Permite Recursos'
 			FROM
@@ -236,6 +254,8 @@ CREATE PROCEDURE REP_LineasAdjudicadas
 					ON adjudicaciones.procedimiento = procedimientos.idProcedimiento
 				INNER JOIN [dbo].[dimTiempo] tiempoAdjudicacion
 					ON adjudicaciones.fechaAdjudicacionFirme = tiempoAdjudicacion.idTiempo
+				INNER JOIN [dbo].[dimMonedas] monedas
+					ON adjudicaciones.monedaAdjudicada = monedas.idMoneda
 
 		END;
 GO;
@@ -259,7 +279,8 @@ GO;
 	•	Tipo de Autorización.
 	•	Tipo de Disminución. 
 */
-CREATE PROCEDURE REP_CONTRATOS
+
+CREATE PROCEDURE REP_Contratos
 	AS
 		BEGIN
 			SELECT
@@ -334,12 +355,13 @@ CREATE PROCEDURE REP_LineasContrato
 				, productos.descripcionProducto as 'Descripción Producto'
 				, contrataciones.numeroLineaCartel as 'Número Línea Cartel'
 				, contrataciones.cantidadContratada as 'Cantidad Contratada'
-				, monedas.descripcionMoneda as 'Moneda'
+				, monedas.codigoISO as 'Moneda'
 				, contrataciones.precioUnitario as 'Precio Unitario'
 				, contrataciones.descuento as 'Descuento'
 				, contrataciones.IVA as 'IVA'
 				, contrataciones.otrosImpuestos as 'Otros Impuestos'
 				, contrataciones.acarreos as 'Acarreos'
+				
 			FROM
 				[dbo].[hechContrataciones] contrataciones
 				INNER JOIN [dbo].[dimProcedimientos] procedimientos

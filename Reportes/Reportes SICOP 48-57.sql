@@ -10,6 +10,7 @@
 •	Fecha de invitación (dd/mm/aaaa).
 •	Partida.
 •	Línea.*/
+
 CREATE PROCEDURE REP_Subastas
 	AS
 		BEGIN
@@ -17,11 +18,15 @@ CREATE PROCEDURE REP_Subastas
 				instituciones.nombreInstitucion as 'Nombre Institución'
 				, instituciones.cedulaInstitucion as 'Cédula Institución'
 				, procedimientos.numeroProcedimiento as 'Número Procedimiento'
-				,  procedimientos.modalidadProcedimiento as 'Modalidad'
+				--, procedimientos.numeroProcedimiento as 'Número de Cartel'
+				--, procedimientos.tipoProcedimiento as 'Tipo de Procedimiento'
+				, procedimientos.modalidadProcedimiento as 'Modalidad'
 				, tiempoApertura.fecha as 'Fecha Apertura'
 				, tiempoInvitacion.fecha as 'Fecha Invitación'
-				,carteles.numeroPartida as 'Partida'
+				, carteles.numeroPartida as 'Partida'
 				, carteles.numeroLinea as 'Línea'
+				--, tiempoAdjudicacion.fecha as 'Fecha de Adjudicación'
+				--, tiempoContratacion.fecha as 'Fecha Notificación de Contrato'
 			FROM
 				[dbo].[hechRemates] remates
 				INNER JOIN[dbo].[dimProcedimientos] procedimientos
@@ -30,10 +35,16 @@ CREATE PROCEDURE REP_Subastas
 					ON procedimientos.institucion = instituciones.idInstitucion
 				INNER JOIN [dbo].[hechCarteles] carteles
 					ON remates.procedimiento = carteles.procedimiento
+				INNER JOIN [dbo].[hechAdjudicaciones] adjudicaciones
+					ON remates.procedimiento = adjudicaciones.procedimiento
 				INNER JOIN [dbo].[dimTiempo] tiempoApertura
 					ON carteles.fechaApertura = tiempoApertura.idTiempo
 				INNER JOIN [dbo].[dimTiempo] tiempoInvitacion
 					ON remates.fechaInvitacion = tiempoInvitacion.idTiempo
+				INNER JOIN [dbo].[dimTiempo] tiempoAdjudicacion
+					ON adjudicaciones.fechaAdjudicacionFirme= tiempoAdjudicacion.idTiempo
+				INNER JOIN [dbo].[dimTiempo] tiempoContratacion
+					ON adjudicaciones.fechaSolicitudContratacion= tiempoContratacion.idTiempo
 		END;
 GO
 
@@ -54,8 +65,13 @@ GO
 				• Línea de orden de pedido.
 				• Código del producto
 */
+CREATE PROCEDURE REP_ConvenioMarco
+AS
+	BEGIN
+	END;
+GO
 
-/*REQ-50 REMATES
+/*REQ-50 REMATES FINIQUITADO
   DESCRIPCION: 
 Presenta detalle de las variables de procedimientos de remate. La información que se desea desplegar es la siguiente:
  
@@ -73,45 +89,109 @@ Presenta detalle de las variables de procedimientos de remate. La información qu
 CREATE PROCEDURE REP_Remates
 	AS
 		BEGIN
-			SELECT
-				instituciones.nombreInstitucion as 'Nombre Institución'
-				, instituciones.cedulaInstitucion as 'Cédula Institución'
-				, procedimientos.numeroProcedimiento as 'Número Procedimiento'
-				,procedimientos.tipoProcedimiento as 'Tipo de Procedimiento'
-				,  procedimientos.modalidadProcedimiento as 'Modalidad'
-				, tiempoApertura.fecha as 'Fecha Apertura'
-				, tiempoInvitacion.fecha as 'Fecha Invitación'
-				,carteles.numeroPartida as 'Partida'
-				, carteles.numeroLinea as 'Línea'
+			SELECT DISTINCT
+				 instituciones.nombreInstitucion as 'Nombre Institucion'
+				,instituciones.cedulaInstitucion as 'Cédula Institucion'
+				,procedimientos.numeroProcedimiento as 'Número de Procedimiento'
+				,procedimientos.nroSICOP as 'Número de Cartel'
+				,procedimientos.tipoProcedimiento as 'Tipo Procedimiento'
+				,procedimientos.modalidadProcedimiento as 'Modalidad Procedimiento'
+				,tiempoApertura.fecha as 'fecha Apertura'
+				,tiempoInvitacion.fecha as 'Fecha de Invitacion'
+				,carteles.numeroPartida as 'Número de Partida'
+				,carteles.numeroLinea as 'Número de Línea'
+				,tiempoNotificacion.fecha as 'Fecha Notificacion'
+				,CONCAT(clasificacion.codigoClasificacion,clasificacion.codigoIdentificacion) as 'Código Producto'
+				,clasificacion.descripcionClasificacion
+				,proveedores.nombreProveedor as 'Nombre Proveedor'
+				,proveedores.cedulaProveedor as 'Cédula Proveedor'
+				,remates.montoPuja as 'Monto Puja'
+				,monedas.codigoISO as 'Moneda Estimada'
+				,remates.montoEstimadoLinea as 'Monto Estimado Línea'
+				,monedaAdjudicada.codigoISO as  'Moneda Adjudicada'
+				,remates.cantidadAdjudicada as 'Cantidad Adjudicada'
+				,remates.tipoCambioMoneda as 'Tipo de Cambio Moneda'
+
+	
 			FROM
 				[dbo].[hechRemates] remates
-				INNER JOIN[dbo].[dimProcedimientos] procedimientos
+				INNER JOIN [dbo].[dimProveedores] proveedores
+					ON remates.proveedor = proveedores.idProveedor
+				LEFT JOIN [dbo].[hechAdjudicaciones] adjudicaciones
+					ON remates.procedimiento = adjudicaciones.procedimiento
+
+				INNER JOIN [dbo].[dimMonedas] monedas
+					ON remates.monedaPuja = monedas.idMoneda
+				INNER JOIN [dbo].[dimMonedas] monedaAdjudicada
+					ON remates.monedaAdjudicada = monedaAdjudicada.idMoneda
+
+				INNER JOIN [dbo].[dimProcedimientos] procedimientos
 					ON remates.procedimiento = procedimientos.idProcedimiento
+					AND procedimientos.tipoProcedimiento='REMATE'
 				INNER JOIN [dbo].[dimInstituciones] instituciones
 					ON procedimientos.institucion = instituciones.idInstitucion
-				INNER JOIN [dbo].[hechCarteles] carteles
-					ON remates.procedimiento = carteles.procedimiento
-				INNER JOIN [dbo].[dimTiempo] tiempoApertura
-					ON carteles.fechaApertura = tiempoApertura.idTiempo
+				LEFT JOIN [dbo].[hechCarteles] carteles
+					ON procedimientos.idProcedimiento = carteles.procedimiento
+				LEFT JOIN [dbo].[dimClasificacionProductos] clasificacion
+					ON carteles.clasificacionProducto=clasificacion.idClasificacionProducto
+
+				LEFT JOIN [dbo].[dimTiempo] tiempoApertura
+					ON carteles.fechaApertura=tiempoApertura.idTiempo
 				INNER JOIN [dbo].[dimTiempo] tiempoInvitacion
 					ON remates.fechaInvitacion = tiempoInvitacion.idTiempo
+				LEFT JOIN [dbo].[dimTiempo] tiempoNotificacion
+					ON adjudicaciones.fechaAdjudicacionFirme= tiempoNotificacion.idTiempo
 		END;
 GO
 
 /*REQ-51 GIRO COMERCIAL DEL CONTRATISTA
   DESCRIPCION:Presenta el detalle de los contratistas que han sido adjudicado
            para dar un servicio o bien u obra, corresponda al giro comercial al cual está registrado.
-La información que se desea ver:
-•	Nombre de proveedor
-•	Cédula proveedor.
-•	Giro de Negocio (o tipo de negocio con el que se registró como proveedor).
-•	Descripción del Procedimiento
-•	Descripción del objeto contractual adjudicado
-•	Código de Identificación adjudicado
-•	Subpartida
-•	Tipo de moneda
-•	Monto adjudicado 
-•	Nombre de la Institución*/
+				La información que se desea ver:
+				•	Nombre de proveedor
+				•	Cédula proveedor.
+				•	Giro de Negocio (o tipo de negocio con el que se registró como proveedor).
+				•	Descripción del Procedimiento
+				•	Descripción del objeto contractual adjudicado
+				•	Código de Identificación adjudicado
+				•	Subpartida
+				•	Tipo de moneda
+				•	Monto adjudicado 
+				•	Nombre de la Institución*/
+select top 1* from [dbo].[hechAdjudicaciones]
+EXEC REP_GiroComercial
+CREATE PROCEDURE REP_GiroComercial
+AS
+	BEGIN
+		SELECT
+			proveedores.nombreProveedor as 'Nombre Proveedor'
+			,proveedores.cedulaProveedor as 'Cédula Proveedor'
+			,proveedores.tamanoProveedor as 'Giro de Negocio'
+			,procedimientos.descripcionProcedimiento as 'Descripcion Procedimiento'
+			,clasificacion.descripcionClasificacion as 'Deacripcion del Objeto Contractual'
+			,proveedores.cedulaProveedor as 'Código de Identificación Adjudicado'
+			,adjudicaciones.objetoGasto as 'Subpartida'
+			,monedas.codigoISO as 'Tipo de Moneda'
+			,adjudicaciones.montoAdjudicadoLinea as 'Monto Adjudicado'
+			--,tiempoAdjudicacion.fecha as 'Fecha de Adjudicacion'
+			,instituciones.nombreInstitucion as 'Nombre Institución'
+			,instituciones.cedulaInstitucion as 'Cédula Institucion'
+		FROM
+			[dbo].[hechAdjudicaciones] adjudicaciones
+			INNER JOIN [dbo].[dimProveedores] proveedores
+				ON adjudicaciones.proveedor = proveedores.idProveedor
+			INNER JOIN [dbo].[dimProcedimientos] procedimientos
+				ON adjudicaciones.procedimiento = procedimientos.idProcedimiento
+			INNER JOIN [dbo].[dimClasificacionProductos] clasificacion
+				ON adjudicaciones.clasificacionProducto = clasificacion.idClasificacionProducto
+			INNER JOIN [dbo].[dimMonedas] monedas
+				ON adjudicaciones.monedaAdjudicada = monedas.idMoneda
+			INNER JOIN [dbo].[dimInstituciones] instituciones
+				ON adjudicaciones.institucion =instituciones.idInstitucion
+			INNER JOIN [dbo].[dimTiempo] tiempoAdjudicacion
+				ON adjudicaciones.fechaAdjudicacionFirme =tiempoAdjudicacion.idTiempo
+		END;
+GO
 
 /*REQ-52 SUSPENSION DE CONTRATOS
   DESCRIPCION:Este reporte detalla los contratos que ha sido objeto de suspensión por parte de las instituciones.
@@ -190,8 +270,7 @@ GO
 				•	Moneda
 				•	Precio total del aumento/disminución
 */
-EXEC REP_Unilateral
-use [dw_sicop]
+
 CREATE PROCEDURE REP_Unilateral
 	AS
 		BEGIN
@@ -208,10 +287,14 @@ CREATE PROCEDURE REP_Unilateral
 				,contrataciones.cantidadContratada as 'Cantidad'
 				, monedas.codigoISO as 'Moneda'
 				, contrataciones.precioUnitario* contrataciones.cantidadContratada as 'Precio Total Contrato Base'
-				, contrataciones.tipoModificacion as 'Tipo de Modificación'
+				
+				, (CASE WHEN contrataciones.tipoModificacion like 'Modificación unilateral del contrato (Aumento)'
+							THEN 'Aumento'
+							ELSE 'Disminución' END) as 'Tipo de Modificación'
+				, tiempoModificacion.fecha as 'Fecha Modificacion'
 				, contrataciones.cantidadAumentada as 'Cantidad'
 				, monedas.codigoISO as 'Moneda'
-				, contrataciones.precioUnitario* contrataciones.cantidadAumentada as 'Monto Total Aumento'
+				, contrataciones.precioUnitario* contrataciones.cantidadAumentada as 'Monto Total Aumento o Disminucion'
 			FROM
 				[dbo].[hechContrataciones] contrataciones
 				INNER JOIN [dbo].[dimProcedimientos] procedimientos
@@ -224,6 +307,8 @@ CREATE PROCEDURE REP_Unilateral
 					ON contrataciones.producto = productos.idProducto
 				INNER JOIN [dbo].[dimContratos] contratos
 					ON contrataciones.contrato = contratos.idContrato
+				INNER JOIN [dbo].[dimTiempo] tiempoModificacion
+					ON contrataciones.fechaModificacion = tiempoModificacion.idTiempo
 				INNER JOIN [dbo].[dimMonedas] monedas
 					ON contrataciones.moneda =monedas.idMoneda
 				WHERE contrataciones.tipoModificacion like'Modificación unilateral del contrato (Aumento)'
@@ -249,6 +334,7 @@ GO
 				•	Moneda
 				•	Precio total del aumento
 */
+select top 1* from 
 CREATE PROCEDURE REP_ContratoAdicional
 	AS
 		BEGIN

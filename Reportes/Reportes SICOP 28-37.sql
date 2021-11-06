@@ -1,3 +1,4 @@
+
 /* REQ-28 TIPO DE PROCEDIMIENTOS SICOP FINIQUITADO
    DESCRIPCION: Generar un reporte que detalle los distintos tipos de figuras 
 				contractuales que se realizan en SICOP. Entiéndase por tipo de procedimiento: 
@@ -241,56 +242,87 @@ GO;
 			     1- ubicación de los proveedores, 
 				 2- ubicación de instituciones compradoras.
 */
+CREATE PROCEDURE REP_ProveedoresYOrdenesInfo
+AS
+	BEGIN
+		SELECT
+			proveedores.tipoProveedor as 'Tipo de Cédula'
+			,proveedores.cedulaProveedor as 'Cédula Proveedor'
+			,proveedores.nombreProveedor as 'Nombre Proveedor'
+			,proveedores.tamanoProveedor as 'Tipo de Empresa'
+			,proveedores.provinciaProveedor as 'Provincia'
+			,proveedores.cantonProveedor as 'Cantón'
+			,proveedores.fechaRegistro as 'Fecha Registro'
 
-CREATE PROCEDURE REP_ProveedoresYOrdenes
+		FROM
+			[dbo].[dimProveedores] proveedores
+		END;
+GO;
+DROP PROCEDURE	REP_ProveedoresYOrdenesContratos
+CREATE PROCEDURE REP_ProveedoresYOrdenesContratos
 	AS
 		BEGIN
-			SELECT
-				T0.idProveedor
-				,T0.[Tipo de Cédula]
-				,T0.[Cedula de Proveedor]
-				,T0.[Nombre Proveedor]
+			SELECT distinct
+				contratos.proveedor
 				,count (contratos.idContrato) as 'Cantidad de Contratos'
-			
-			FROM
-				(SELECT
-					proveedores.idProveedor
-					,proveedores.tipoProveedor as 'Tipo de Cédula'
-					,proveedores.cedulaProveedor as 'Cedula de Proveedor'
-					, proveedores.nombreProveedor as 'Nombre Proveedor'
-					, proveedores.tamanoProveedor as 'Tipo de Empresa'
-					, proveedores.provinciaProveedor as 'Provincia'
-					, proveedores.cantonProveedor as 'Canton'
-					, proveedores.fechaRegistro as 'Fecha Registro SICOP'
-				FROM
-					[dbo].[dimProveedores] proveedores) AS T0		
-					LEFT JOIN [dbo].[dimContratos] as contratos
-						ON T0.idProveedor = contratos.proveedor
-				GROUP BY
-					T0.idProveedor
-					,T0.[Tipo de Cédula]
-					,T0.[Cedula de Proveedor]
-					,T0.[Nombre Proveedor]
+			FROM 
+				[dbo].[dimContratos] contratos
+				GROUP BY contratos.proveedor
+			END;
+GO;
+
+DROP PROCEDURE REP_ProveedoresYOrdenesSanciones
+CREATE PROCEDURE REP_ProveedoresYOrdenesSanciones
+	AS
+		BEGIN
+			SELECT distinct
+				sanciones.proveedor
+				,count (sanciones.numeroResolucion) as 'Cantidad de Sanciones'
+			FROM 
+				[dbo].[hechSanciones] sanciones
+				GROUP BY sanciones.proveedor
 		END;
 GO;
 
-SELECT
-	proveedores.idProveedor
-	,count(contratos.idContrato)
-	,count(sanciones.proveedor)
-	,count(invitaciones.proveedor)
-	,count(ofertas.proveedor)
-FROM
-	[dbo].[dimProveedores] proveedores
-	LEFT JOIN [dbo].[dimContratos] contratos
-		ON proveedores.idProveedor = contratos.proveedor
-	LEFT JOIN [dbo].[hechSanciones] sanciones
-		ON proveedores.idProveedor = sanciones.proveedor
-	LEFT JOIN [dbo].[hechInvitaciones] invitaciones
-		ON proveedores.idProveedor= invitaciones.proveedor
-	LEFT  JOIN [dbo].[hechOfertas] ofertas
-		ON proveedores.idProveedor = ofertas.proveedor
-	GROUP BY proveedores.idProveedor
+DROP PROCEDURE REP_ProveedoresYOrdenesInvitaciones
+CREATE PROCEDURE REP_ProveedoresYOrdenesInvitaciones
+	AS
+		BEGIN
+			SELECT distinct
+				invitaciones.proveedor
+				,count (invitaciones.secuencia) as 'Cantidad Invitaciones'
+			FROM 
+				[dbo].[hechInvitaciones] invitaciones
+				GROUP BY invitaciones.proveedor
+			END;
+GO;
+
+DROP PROCEDURE REP_ProveedoresYOrdenesOfertas
+CREATE PROCEDURE REP_ProveedoresYOrdenesOfertas
+	AS
+		BEGIN
+			SELECT distinct
+				ofertas.proveedor
+				,count (ofertas.numeroOferta) as 'Cantidad de Ofertas'
+			FROM 
+				[dbo].[hechOfertas] ofertas
+				GROUP BY ofertas.proveedor
+			END;
+GO;
+
+DROP PROCEDURE REP_ProveedoresYOrdenesCompras
+CREATE PROCEDURE REP_ProveedoresYOrdenesCompras
+	AS
+		BEGIN
+			SELECT distinct
+				ordenes.contrato
+				,count (ordenes.numeroOrden) as 'Cantidad de Órdenes'
+				,sum (ordenes.totalEstimado) as 'Monto Total Órdenes'
+			FROM 
+				[dbo].[hechOrdenesPedido] ordenes
+				GROUP BY ordenes.contrato
+			END;
+GO;
 /*REQ-37 REPORTES PROVEEDORES-CONTRATISTAS FINIQUITADO
   DESCRIPCION: Reporte que muestra los proveedores registrados en SICOP 
 			   y las instituciones públicas que compran bienes y servicios
